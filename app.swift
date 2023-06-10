@@ -6,11 +6,11 @@ import Combine
 struct FullscreenImageView: View {
     @Binding var isPresented: Bool
     let image: UIImage
-
+    
     @GestureState private var scale: CGFloat = 1.0
     @GestureState private var translation: CGSize = .zero
     @State private var isZoomed = false
-
+    
     
     
     var body: some View {
@@ -29,7 +29,7 @@ struct FullscreenImageView: View {
                     }
                 }
                 Spacer()
-
+                
                 let magnificationGesture = MagnificationGesture()
                     .updating($scale) { value, scale, _ in
                         scale = value.magnitude
@@ -39,7 +39,7 @@ struct FullscreenImageView: View {
                             isZoomed = true
                         }
                     }
-
+                
                 let dragGesture = DragGesture()
                     .updating($translation) { value, state, _ in
                         state = value.translation
@@ -49,12 +49,12 @@ struct FullscreenImageView: View {
                             isPresented = false
                         }
                     }
-
+                
                 let tapGesture = TapGesture(count: 2)
                     .onEnded {
                         isZoomed.toggle()
                     }
-
+                
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: isZoomed ? .fill : .fit)
@@ -63,7 +63,7 @@ struct FullscreenImageView: View {
                     .gesture(magnificationGesture.simultaneously(with: dragGesture))
                     .gesture(tapGesture)
                     .padding()
-
+                
                 Spacer()
             }
         }
@@ -76,8 +76,8 @@ class ImageLoader: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     @Published var error: IdentifiableError? = nil
-
-
+    
+    
     func loadImage(username: String,
                    method: String,
                    period: String,
@@ -88,7 +88,7 @@ class ImageLoader: ObservableObject {
                    rows: Int,
                    columns: Int,
                    fontsize: Int) {
-
+        
         var components = URLComponents()
         components.scheme = "https"
         components.host = "songstitch.art"
@@ -105,42 +105,42 @@ class ImageLoader: ObservableObject {
             URLQueryItem(name: "columns", value: String(columns)),
             URLQueryItem(name: "fontsize", value: String(fontsize)),
         ]
-
+        
         guard let url = components.url else { return }
-
+        
         isLoading = true
         errorMessage = nil
         URLSession.shared.dataTask(with: url) { (data, response, error) in
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                    if let error = error {
-                        self.errorMessage = error.localizedDescription
-                    } else if let httpResponse = response as? HTTPURLResponse,
-                              httpResponse.statusCode != 200,
-                              let responseData = data,
-                              let errorMessage = String(data: responseData, encoding: .utf8) {
-                        self.errorMessage = "Error: \(errorMessage)"
-                    } else if let data = data, let image = UIImage(data: data) {
-                        self.image = image
-                    }
+            DispatchQueue.main.async {
+                self.isLoading = false
+                if let error = error {
+                    self.errorMessage = error.localizedDescription
+                } else if let httpResponse = response as? HTTPURLResponse,
+                          httpResponse.statusCode != 200,
+                          let responseData = data,
+                          let errorMessage = String(data: responseData, encoding: .utf8) {
+                    self.errorMessage = "Error: \(errorMessage)"
+                } else if let data = data, let image = UIImage(data: data) {
+                    self.image = image
                 }
-            }.resume()
-        }
+            }
+        }.resume()
     }
+}
 
 class SaveToPhotosActivity: UIActivity {
     override var activityTitle: String? {
         return "Save to Photos"
     }
-
+    
     override var activityImage: UIImage? {
         return UIImage(systemName: "square.and.arrow.down")
     }
-
+    
     override class var activityCategory: UIActivity.Category {
         return .action
     }
-
+    
     override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
         for item in activityItems {
             if item is UIImage {
@@ -149,7 +149,7 @@ class SaveToPhotosActivity: UIActivity {
         }
         return false
     }
-
+    
     override func prepare(withActivityItems activityItems: [Any]) {
         for item in activityItems {
             if let image = item as? UIImage {
@@ -157,11 +157,11 @@ class SaveToPhotosActivity: UIActivity {
             }
         }
     }
-
+    
     override func perform() {
         activityDidFinish(true)
     }
-
+    
     @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
         // Handle save completion
     }
@@ -169,13 +169,13 @@ class SaveToPhotosActivity: UIActivity {
 
 struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
-
+    
     func makeUIViewController(context: UIViewControllerRepresentableContext<ShareSheet>) -> UIActivityViewController {
         let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: [SaveToPhotosActivity()])
         controller.excludedActivityTypes = [.addToReadingList, .openInIBooks] // Optional: Exclude specific activity types
         return controller
     }
-
+    
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: UIViewControllerRepresentableContext<ShareSheet>) {
         // No update needed
     }
@@ -201,8 +201,8 @@ struct ContentView: View {
     @Environment(\.presentationMode) var presentationMode
     @FocusState var isInputActive: Bool
     @State private var isUsernameValid = true
-
-
+    
+    
     init() {
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
         
@@ -218,107 +218,107 @@ struct ContentView: View {
     }
     
     var isUsernameValidBinding: Binding<Bool> {
-         Binding<Bool>(
-             get: { isUsernameValid },
-             set: {
-                 isUsernameValid = $0
-                 if !$0 {
-                     isInputActive = true // Keep the focus on the text field when an error occurs
-                 }
-             }
-         )
-     }
-
-     func validateUsername() {
-         let usernamePredicate = NSPredicate(format: "SELF MATCHES %@", "^[a-zA-Z][a-zA-Z0-9_-]{1,14}$")
-         isUsernameValid = usernamePredicate.evaluate(with: username)
-     }
-
+        Binding<Bool>(
+            get: { isUsernameValid },
+            set: {
+                isUsernameValid = $0
+                if !$0 {
+                    isInputActive = true // Keep the focus on the text field when an error occurs
+                }
+            }
+        )
+    }
+    
+    func validateUsername() {
+        let usernamePredicate = NSPredicate(format: "SELF MATCHES %@", "^[a-zA-Z][a-zA-Z0-9_-]{1,14}$")
+        isUsernameValid = usernamePredicate.evaluate(with: username)
+    }
+    
     var body: some View {
         NavigationView {
             VStack {
-         /*       Image("logo")
-                                 .resizable()
-                                 .aspectRatio(contentMode: .fit)
-                                 .padding(.top, 10)
-                                 .padding(.bottom, -10)*/
-                             Form {
-                                 Section(header: Text("Generate Your Last.FM Collage")) {
-                                     HStack {
-                                         Picker("Collage", selection: $method) {
-                                             Text("Top Albums").tag("album")
-                                             Text("Top Artists").tag("artist")
-                                             Text("Top Tracks").tag("track")
-                                         }
-                                         .pickerStyle(SegmentedPickerStyle())
-                                         .accentColor(.blue)
-                                         Spacer()
-                                     }
-          
-                                     TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
-                                                                validateUsername()
-                                                            })                                         .focused($isInputActive)
-                                         .alert(isPresented: Binding<Bool>(
-                                                                    get: { !isUsernameValid },
-                                                                    set: { _ in }
-                                                                )) {
-                                                                    Alert(
-                                                                        title: Text("Invalid Username"),
-                                                                        message: Text("Please enter a valid username."),
-                                                                        dismissButton: .default(Text("OK"))
-                                                                    )
-                                                                }
-                                         .toolbar {
-                                                  ToolbarItemGroup(placement: .keyboard) {
-                                                      Spacer()
-                                                      Button("Done") {
-                                                          isInputActive = false
-                                                      }
-                                                      .foregroundColor(Color.blue)
-                                                  }
-                                              }
-                                     HStack {
-                                         Text("Period")
-                                         Spacer()
-                                         Picker("", selection: $period) {
-                                             Text("7 Days").tag("7day")
-                                             Text("1 Month").tag("1month")
-                                             Text("3 Months").tag("3month")
-                                             Text("6 Months").tag("6month")
-                                             Text("12 Months").tag("12month")
-                                             Text("Overall").tag("overall")
-                                         }
-                                         .pickerStyle(MenuPickerStyle())
-                                         .accentColor(.blue)
-                                     }
-                                     Toggle(isOn: $album) {
-                                         Text("Display Album Name")
-                                     }
-                                     Toggle(isOn: $artist) {
-                                         Text("Display Artist Name")
-                                     }
-                                     Toggle(isOn: $playcount) {
-                                         Text("Display Play Count")
-                                     }
-                                     Stepper(value: $rows, in: 1...10) {
-                                         Text("Rows: \(rows)")
-                                     }
-                                     Stepper(value: $columns, in: 1...10) {
-                                         Text("Columns: \(columns)")
-                                     }
-                                     HStack {
-                                         Text("Font Size")
-                                         Picker("Font Size", selection: $fontsize) {
-                                             Text("Small").tag(12)
-                                             Text("Medium").tag(16)
-                                             Text("Large").tag(20)
-                                         }
-                                         .pickerStyle(SegmentedPickerStyle())
-                                     }
-                                 }
-                             }
-                             .padding(.top, 0)
-                             .padding(.bottom, -1)
+                /*       Image("logo")
+                 .resizable()
+                 .aspectRatio(contentMode: .fit)
+                 .padding(.top, 10)
+                 .padding(.bottom, -10)*/
+                Form {
+                    Section(header: Text("Generate Your Last.FM Collage")) {
+                        HStack {
+                            Picker("Collage", selection: $method) {
+                                Text("Top Albums").tag("album")
+                                Text("Top Artists").tag("artist")
+                                Text("Top Tracks").tag("track")
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .accentColor(.blue)
+                            Spacer()
+                        }
+                        
+                        TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
+                            validateUsername()
+                        })                                         .focused($isInputActive)
+                            .alert(isPresented: Binding<Bool>(
+                                get: { !isUsernameValid },
+                                set: { _ in }
+                            )) {
+                                Alert(
+                                    title: Text("Invalid Username"),
+                                    message: Text("Please enter a valid username."),
+                                    dismissButton: .default(Text("OK"))
+                                )
+                            }
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Done") {
+                                        isInputActive = false
+                                    }
+                                    .foregroundColor(Color.blue)
+                                }
+                            }
+                        HStack {
+                            Text("Period")
+                            Spacer()
+                            Picker("", selection: $period) {
+                                Text("7 Days").tag("7day")
+                                Text("1 Month").tag("1month")
+                                Text("3 Months").tag("3month")
+                                Text("6 Months").tag("6month")
+                                Text("12 Months").tag("12month")
+                                Text("Overall").tag("overall")
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                            .accentColor(.blue)
+                        }
+                        Toggle(isOn: $album) {
+                            Text("Display Album Name")
+                        }
+                        Toggle(isOn: $artist) {
+                            Text("Display Artist Name")
+                        }
+                        Toggle(isOn: $playcount) {
+                            Text("Display Play Count")
+                        }
+                        Stepper(value: $rows, in: 1...10) {
+                            Text("Rows: \(rows)")
+                        }
+                        Stepper(value: $columns, in: 1...10) {
+                            Text("Columns: \(columns)")
+                        }
+                        HStack {
+                            Text("Font Size")
+                            Picker("Font Size", selection: $fontsize) {
+                                Text("Small").tag(12)
+                                Text("Medium").tag(16)
+                                Text("Large").tag(20)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                        }
+                    }
+                }
+                .padding(.top, 0)
+                .padding(.bottom, -1)
                 if imageLoader.image != nil {
                     
                     Divider()
@@ -327,54 +327,54 @@ struct ContentView: View {
                         .padding(.top, -1)
                 }
                 if let errorMessage = imageLoader.errorMessage {
-                                Text(errorMessage)
-                                    .foregroundColor(.red)
-                                    .padding()
-                            }
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .padding()
+                }
                 if let image = imageLoader.image {
-                            Button(action: {
-                                isShowingFullscreenImage = true
-                            }) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(.top, 10)
-                                    .padding(.bottom, 20)
-                            }
-                            .fullScreenCover(isPresented: $isShowingFullscreenImage) {
-                                                 FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
-                                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .onTapGesture {
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                            HStack {
-                                Button(action: {
-                                    isShowingShareSheet = true
-                                }) {
-                                    Label("Share", systemImage: "square.and.arrow.up")
-                                        .padding()
-                                        .foregroundColor(.blue)
-                                        .background(
-                                            Capsule()
-                                                .stroke(Color.blue, lineWidth: 1)                                        )
-                                }
-                                .sheet(isPresented: $isShowingShareSheet) {
-                                    ShareSheet(activityItems: [image])
-                                }
-
-                                Button(action: {
-                                    imageLoader.image = nil
-                                }) {
-                                    Label("Close", systemImage: "xmark")
-                                        .padding()
-                                        .foregroundColor(.red)
-                                        .background(
-                                            Capsule()
-                                                .stroke(Color.red, lineWidth: 1)                                        )
-                                }
-                            }
+                    Button(action: {
+                        isShowingFullscreenImage = true
+                    }) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(.top, 10)
+                            .padding(.bottom, 20)
+                    }
+                    .fullScreenCover(isPresented: $isShowingFullscreenImage) {
+                        FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .onTapGesture {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    HStack {
+                        Button(action: {
+                            isShowingShareSheet = true
+                        }) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .padding()
+                                .foregroundColor(.blue)
+                                .background(
+                                    Capsule()
+                                        .stroke(Color.blue, lineWidth: 1)                                        )
                         }
+                        .sheet(isPresented: $isShowingShareSheet) {
+                            ShareSheet(activityItems: [image])
+                        }
+                        
+                        Button(action: {
+                            imageLoader.image = nil
+                        }) {
+                            Label("Close", systemImage: "xmark")
+                                .padding()
+                                .foregroundColor(.red)
+                                .background(
+                                    Capsule()
+                                        .stroke(Color.red, lineWidth: 1)                                        )
+                        }
+                    }
+                }
                 
                 if imageLoader.isLoading {
                     ProgressView()
@@ -411,22 +411,22 @@ struct ContentView: View {
                 .disabled(generateStatus || imageLoader.isLoading || !isUsernameValid)
                 .alert(item: $imageLoader.error) { error in
                     Alert(
-                           title: Text("Error"),
-                           message: Text(error.error.localizedDescription),
-                           dismissButton: .default(Text("OK"))
-                       )                }            }
+                        title: Text("Error"),
+                        message: Text(error.error.localizedDescription),
+                        dismissButton: .default(Text("OK"))
+                    )                }            }
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
         }
         .alert(item: $imageLoader.error) { error in
-                       Alert(
-                           title: Text("Error"),
-                           message: Text(error.error.localizedDescription),
-                           dismissButton: .default(Text("OK"))
-                       )
-                   }
-               
+            Alert(
+                title: Text("Error"),
+                message: Text(error.error.localizedDescription),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        
     }
 }
 
