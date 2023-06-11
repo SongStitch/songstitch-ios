@@ -6,16 +6,16 @@ import Combine
 struct FullscreenImageView: View {
     @Binding var isPresented: Bool
     let image: UIImage
-    
+
     @GestureState private var scale: CGFloat = 1.0
-    @GestureState private var translation: CGSize = .zero
     @State private var isZoomed = false
-    
-    
-    
+    @State private var lastScaleValue: CGFloat = 1.0
+
+    @State private var offset: CGSize = .zero
+    @GestureState private var dragOffset: CGSize = .zero
+
     var body: some View {
         ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
             VStack {
                 HStack {
                     Spacer()
@@ -23,53 +23,57 @@ struct FullscreenImageView: View {
                         isPresented = false
                     }) {
                         Image(systemName: "xmark")
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .font(.title)
                             .padding()
                     }
                 }
                 Spacer()
-                
+
                 let magnificationGesture = MagnificationGesture()
                     .updating($scale) { value, scale, _ in
-                        scale = value.magnitude
+                        let scaledValue = value.magnitude
+                        scale = min(max(scaledValue, 1.0), 3.0)
                     }
                     .onEnded { value in
-                        if value > 1.0 {
-                            isZoomed = true
-                        }
+                        lastScaleValue = min(max(value, 1.0), 3.0)
+                        isZoomed = value > 1.0
                     }
-                
+
                 let dragGesture = DragGesture()
-                    .updating($translation) { value, state, _ in
+                    .updating($dragOffset) { value, state, _ in
                         state = value.translation
                     }
                     .onEnded { value in
-                        if value.translation.height > 200 {
-                            isPresented = false
-                        }
+                        offset.width += value.translation.width
+                        offset.height += value.translation.height
                     }
-                
+
                 let tapGesture = TapGesture(count: 2)
                     .onEnded {
                         isZoomed.toggle()
+                        if !isZoomed {
+                            offset = .zero
+                            lastScaleValue = 1.0
+                        }
                     }
-                
+
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: isZoomed ? .fill : .fit)
                     .scaleEffect(scale)
-                    .offset(translation)
+                    .offset(x: isZoomed ? (offset.width + dragOffset.width) : 0, y: isZoomed ? (offset.height + dragOffset.height) : 0)
                     .gesture(magnificationGesture.simultaneously(with: dragGesture))
                     .gesture(tapGesture)
                     .padding()
-                
+
                 Spacer()
             }
         }
         .statusBar(hidden: true)
     }
 }
+
 
 class ImageLoader: ObservableObject {
     @Published var image: UIImage? = nil
@@ -191,7 +195,7 @@ struct ContentView: View {
     @State var username: String
     @State var method: String = "album"
     @State var period: String = "7day"
-    @State var track: Bool = false
+    @State var track: Bool = true
     @State var artist: Bool = true
     @State var album: Bool = true
     @State var playcount: Bool = true
@@ -204,11 +208,25 @@ struct ContentView: View {
     @State private var isShowingFullscreenImage = false
     @Environment(\.presentationMode) var presentationMode
     @FocusState var isInputActive: Bool
-    @State private var isShowingImage: Bool = false  // This will be true when the image is being shown
+    @State private var isShowingImage: Bool = false
+    @State private var isShowingError = true
+    @State private var IsShowingGenerate = true
 
+    func triggerGenerateButton() {
+        imageLoader.loadImage(username: username,
+                              method: method,
+                              period: period,
+                              track: track,
+                              artist: artist,
+                              album: album,
+                              playcount: playcount,
+                              rows: rows,
+                              columns: columns,
+                              fontsize: fontsize
+        )
+        isShowingImage = imageLoader.errorMessage == nil
+    }
 
-    
-    
     
     init() {
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
@@ -227,10 +245,12 @@ struct ContentView: View {
             UITextView.appearance().tintColor = UIColor.black
             UINavigationBar.appearance().tintColor = UIColor.black
         }
+        
     }
     
     var body: some View {
         NavigationView {
+            
             ZStack {
                 if !isShowingImage {
                     VStack {
@@ -240,8 +260,12 @@ struct ContentView: View {
                          .padding(.top, 10)
                          .padding(.bottom, -10)*/
                         Form {
-                            Section(header: Text("Generate Your Last.FM Collage")) {
-                                    VStack {
+                            Section(header: Text("Generate Your Last.FM Collage")
+                                .frame(maxWidth: .infinity) // Extend the header to full width
+                                .font(.headline)
+                                .padding(.vertical, 0) // Add vertical padding to center the text
+                            //    .background(Color.gray.opacity(0.2)) // Optional: add a background color
+                            ){                                    VStack {
                                         Text("Select a Collage Type")
                                             .font(.headline)
                                         Picker(selection: $method, label: Text("Collage")) {
@@ -251,18 +275,27 @@ struct ContentView: View {
                                         }
                                         .pickerStyle(SegmentedPickerStyle())
                                         .accentColor(.blue)
-                                    }
-                                
+                                        
+                                    }.padding(.bottom, -10)
+                                    .padding(.top, 10)
+                            
                                 VStack {
                                     Text("Required Options")
                                         .font(.headline)
                                         .padding(.bottom, 10)
+                                        .padding(.top, 10)
                                     TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
                                     })  .focused($isInputActive)
                                     
                                         .toolbar {
                                             ToolbarItemGroup(placement: .keyboard) {
+                                                Button("Generate") {
+                                                    triggerGenerateButton()
+                                                }.foregroundColor(Color.blue)
+
                                                 Spacer()
+
+                                                .foregroundColor(Color.blue)
                                                 Button("Done") {
                                                     isInputActive = false
                                                 }
@@ -283,47 +316,71 @@ struct ContentView: View {
                                         .pickerStyle(MenuPickerStyle())
                                         .accentColor(.blue)
                                     }
-                                
-                                    Text("Collage Options")
-                                        .font(.headline)
+                                    Group {
+                                        
+                                        Text("Collage Options")
+                                            .font(.headline)
+                                            .padding(.bottom, 10)
+                                            .padding(.top, 10)
+                                        if method != "artist" {
+                                            Toggle(isOn: $album) {
+                                                Text("Display Album Name")
+                                            }
+                                        }
+                                        if method == "track" {
+                                            Toggle(isOn: $track) {
+                                                Text("Display Track Name")
+                                            }
+                                        }
+                                        Toggle(isOn: $artist) {
+                                            Text("Display Artist Name")
+                                        }
+                                        Toggle(isOn: $playcount) {
+                                            Text("Display Play Count")
+                                        }
                                         .padding(.bottom, 10)
-                                    Toggle(isOn: $album) {
-                                        Text("Display Album Name")
-                                    }
-                                    if method == "track" {
-                                        Toggle(isOn: $track) {
-                                            Text("Display Track Name")
+                                        
+                                        VStack {
+                                            Stepper(value: $rows, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
+                                                
+                                                Text("Rows: \(rows)")
+                                            }
+                                            Stepper(value: $columns, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
+                                                
+                                                Text("Columns: \(columns)")
+                                            }
+                                        } .padding(.top, 10)
+                                        
+                                        
+                                        HStack {
+                                            VStack {
+                                                Text("Text Font Size")
+                                                Picker("Font Size", selection: $fontsize) {
+                                                    Text("Small").tag(12)
+                                                    Text("Medium").tag(16)
+                                                    Text("Large").tag(20)
+                                                }
+                                                .pickerStyle(SegmentedPickerStyle())
+                                            }.padding(.top, 10)
+                                                .padding(.bottom, 20)
+                                            
                                         }
                                     }
-                                    Toggle(isOn: $artist) {
-                                        Text("Display Artist Name")
-                                    }
-                                    Toggle(isOn: $playcount) {
-                                        Text("Display Play Count")
-                                    }
-                                    .padding(.bottom, 10)
-
                                     VStack {
-             
-                                        Stepper(value: $rows, in: 1...10) {
-                                            Text("Rows: \(rows)")
+                                    if let errorMessage = imageLoader.errorMessage {
+                                        if isShowingError {
+                                            Text(errorMessage)
+                                                .foregroundColor(.red)
+                                        }        else {
+                                            Text("") // Empty text to reserve space
                                         }
-                                        Stepper(value: $columns, in: 1...10) {
-                                            Text("Columns: \(columns)")
-                                        }
+                                        
                                     }
-
-                                    HStack {
-                                        Text("Text Font Size")
-                                        Picker("Font Size", selection: $fontsize) {
-                                            Text("Small").tag(12)
-                                            Text("Medium").tag(16)
-                                            Text("Large").tag(20)
-                                        }
-                                        .pickerStyle(SegmentedPickerStyle())
-                                    }
-                                }
                             }
+                                }
+         
+                            }
+                    
                         }
                     }
                     .padding(.top, 0)
@@ -341,7 +398,8 @@ struct ContentView: View {
                     if let image = imageLoader.image, isShowingImage, imageLoader.errorMessage == nil {
                         Button(action: {
                             isShowingFullscreenImage = true
-                        }) {
+                        })
+                        {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
@@ -357,6 +415,7 @@ struct ContentView: View {
                         .onTapGesture {
                             presentationMode.wrappedValue.dismiss()
                         }
+                        Text("Touch Image to view in fullscreen").padding(.bottom, 10)
                         HStack {
                             Button(action: {
                                 isShowingShareSheet = true
@@ -371,7 +430,6 @@ struct ContentView: View {
                             .sheet(isPresented: $isShowingShareSheet) {
                                 ShareSheet(activityItems: [image])
                             }
-                            
                             Button(action: {
                                 imageLoader.image = nil
                                 isShowingImage = false
@@ -382,15 +440,11 @@ struct ContentView: View {
                                     .background(
                                         Capsule()
                                             .stroke(Color.red, lineWidth: 1)                                        )
-                            }
+                            }.padding(.leading, 10)
                         }
                     }
                     Spacer()
-                    if let errorMessage = imageLoader.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .padding()
-                    }
+
                     Color.clear
                         .frame(width: 10, height: 10) // Modify as per your needs
                         .overlay(
@@ -403,6 +457,8 @@ struct ContentView: View {
                                 }
                             }
                         )
+
+                    
                     Button(action: {
                         imageLoader.loadImage(username: username,
                                               method: method,
@@ -416,19 +472,24 @@ struct ContentView: View {
                                               fontsize: fontsize
                         )
                         isShowingImage = imageLoader.errorMessage == nil
-                    }) {
+                    }
+) {
                         Text(imageLoader.isLoading ? "Generating..." : "Generate")
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
+
+                            .edgesIgnoringSafeArea(.bottom)
                             .font(.headline)
                             .foregroundColor(.white)
                             .background(imageLoader.isLoading ? Color.gray : Color.blue)
                             .cornerRadius(10)
                             .padding(.horizontal)
                             .padding(.top, 10)
+                            .padding(.bottom, 10)
+                            .zIndex(-1)
                             .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
                     }
                     .disabled(generateStatus || imageLoader.isLoading || isShowingImage)
-                    .opacity((generateStatus || imageLoader.isLoading || isShowingImage) ? 0 : 1)
+                    .opacity((generateStatus || imageLoader.isLoading || isShowingImage || !IsShowingGenerate) ? 0 : 1)
                     .alert(item: $imageLoader.error) { error in
                         Alert(
                             title: Text("Error"),
@@ -453,14 +514,28 @@ struct ContentView: View {
             // This will be called every time imageLoader.errorHasOccurred changes
             if !newValue {
                 // if there's no error, show the image
+                    isShowingError = false
                 isShowingImage = imageLoader.image != nil
             } else {
                 // if there's an error, hide the image
+                //withAnimation(.easeIn(duration: 0.5)) {
+                    isShowingError = true
+                //}
                 isShowingImage = false
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationViewStyle(StackNavigationViewStyle())
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isShowingError = false
+            IsShowingGenerate = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isShowingError = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                IsShowingGenerate = true
+            }
+        }.statusBar(hidden: false)
     }
 }
 
@@ -468,3 +543,4 @@ struct IdentifiableError: Identifiable {
     let id = UUID()
     let error: Error
 }
+
