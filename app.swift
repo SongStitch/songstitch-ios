@@ -506,7 +506,7 @@ struct ContentView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                             .background(imageLoader.isLoading ? Color.gray : Color.blue)
-                            .cornerRadius(5)
+                            .cornerRadius(15)
                             .padding(.horizontal)
                             .padding(.top, 10)
                             .padding(.bottom, 10)
