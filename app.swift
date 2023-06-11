@@ -415,7 +415,8 @@ struct ContentView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                //.frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .frame(maxWidth: UIScreen.main.bounds.width * 0.95, maxHeight: .infinity)
                                 .clipShape(Rectangle())
                                 .padding(.top, 20)
                                 .padding(.bottom, 20)
@@ -561,6 +562,7 @@ struct ContentView: View {
                 IsShowingGenerate = true
             }
         }.statusBar(hidden: false)
+        
     }
 }
 
