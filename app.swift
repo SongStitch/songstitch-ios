@@ -76,6 +76,8 @@ class ImageLoader: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
     @Published var error: IdentifiableError? = nil
+    @Published var errorHasOccurred: Bool = false
+
     
     
     func loadImage(username: String,
@@ -89,6 +91,7 @@ class ImageLoader: ObservableObject {
                    columns: Int,
                    fontsize: Int) {
         
+        self.errorHasOccurred = false
         var components = URLComponents()
         components.scheme = "https"
         components.host = "songstitch.art"
@@ -115,10 +118,12 @@ class ImageLoader: ObservableObject {
                 self.isLoading = false
                 if let error = error {
                     self.errorMessage = error.localizedDescription
+                    self.errorHasOccurred = true
                 } else if let httpResponse = response as? HTTPURLResponse,
                           httpResponse.statusCode != 200,
                           let responseData = data,
                           let errorMessage = String(data: responseData, encoding: .utf8) {
+                          self.errorHasOccurred = true
                     self.errorMessage = "Error: \(errorMessage)"
                 } else if let data = data, let image = UIImage(data: data) {
                     self.image = image
@@ -182,7 +187,6 @@ struct ShareSheet: UIViewControllerRepresentable {
 }
 
 
-
 struct ContentView: View {
     @State var username: String
     @State var method: String = "album"
@@ -200,11 +204,19 @@ struct ContentView: View {
     @State private var isShowingFullscreenImage = false
     @Environment(\.presentationMode) var presentationMode
     @FocusState var isInputActive: Bool
-    @State private var isUsernameValid = true
+    @State private var isShowingImage: Bool = false  // This will be true when the image is being shown
+
+
+    
     
     
     init() {
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
+        //UISplitViewController.appearance().preferredDisplayMode = twoOverSecondary
+        
+        UISplitViewController().preferredDisplayMode = .twoDisplaceSecondary
+        //UINavigationController().viewControllers = UINavigationController()
+        
         
         if UITraitCollection.current.userInterfaceStyle == .dark {
             UITextField.appearance().tintColor = UIColor.white
@@ -217,174 +229,181 @@ struct ContentView: View {
         }
     }
     
-    var isUsernameValidBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { isUsernameValid },
-            set: {
-                isUsernameValid = $0
-                if !$0 {
-                    isInputActive = true // Keep the focus on the text field when an error occurs
-                }
-            }
-        )
-    }
-    
-    func validateUsername() {
-        let usernamePredicate = NSPredicate(format: "SELF MATCHES %@", "^[a-zA-Z][a-zA-Z0-9_-]{1,14}$")
-        isUsernameValid = usernamePredicate.evaluate(with: username)
-    }
-    
     var body: some View {
         NavigationView {
-            VStack {
-                /*       Image("logo")
-                 .resizable()
-                 .aspectRatio(contentMode: .fit)
-                 .padding(.top, 10)
-                 .padding(.bottom, -10)*/
-                Form {
-                    Section(header: Text("Generate Your Last.FM Collage")) {
-                        HStack {
-                            Picker("Collage", selection: $method) {
-                                Text("Top Albums").tag("album")
-                                Text("Top Artists").tag("artist")
-                                Text("Top Tracks").tag("track")
-                            }
-                            .pickerStyle(SegmentedPickerStyle())
-                            .accentColor(.blue)
-                            Spacer()
-                        }
-                        
-                        TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
-                            validateUsername()
-                        })                                         .focused($isInputActive)
-                            .alert(isPresented: Binding<Bool>(
-                                get: { !isUsernameValid },
-                                set: { _ in }
-                            )) {
-                                Alert(
-                                    title: Text("Invalid Username"),
-                                    message: Text("Please enter a valid username."),
-                                    dismissButton: .default(Text("OK"))
-                                )
-                            }
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Done") {
-                                        isInputActive = false
+            ZStack {
+                if !isShowingImage {
+                    VStack {
+                        /*       Image("logo")
+                         .resizable()
+                         .aspectRatio(contentMode: .fit)
+                         .padding(.top, 10)
+                         .padding(.bottom, -10)*/
+                        Form {
+                            Section(header: Text("Generate Your Last.FM Collage")) {
+                                    VStack {
+                                        Text("Select a Collage Type")
+                                            .font(.headline)
+                                        Picker(selection: $method, label: Text("Collage")) {
+                                            Text("Top Albums").tag("album")
+                                            Text("Top Artists").tag("artist")
+                                            Text("Top Tracks").tag("track")
+                                        }
+                                        .pickerStyle(SegmentedPickerStyle())
+                                        .accentColor(.blue)
                                     }
-                                    .foregroundColor(Color.blue)
+                                
+                                VStack {
+                                    Text("Required Options")
+                                        .font(.headline)
+                                        .padding(.bottom, 10)
+                                    TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
+                                    })  .focused($isInputActive)
+                                    
+                                        .toolbar {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Spacer()
+                                                Button("Done") {
+                                                    isInputActive = false
+                                                }
+                                                .foregroundColor(Color.blue)
+                                            }
+                                        }
+                                    HStack {
+                                        Text("Period")
+                                        Spacer()
+                                        Picker("", selection: $period) {
+                                            Text("7 Days").tag("7day")
+                                            Text("1 Month").tag("1month")
+                                            Text("3 Months").tag("3month")
+                                            Text("6 Months").tag("6month")
+                                            Text("12 Months").tag("12month")
+                                            Text("Overall").tag("overall")
+                                        }
+                                        .pickerStyle(MenuPickerStyle())
+                                        .accentColor(.blue)
+                                    }
+                                
+                                    Text("Collage Options")
+                                        .font(.headline)
+                                        .padding(.bottom, 10)
+                                    Toggle(isOn: $album) {
+                                        Text("Display Album Name")
+                                    }
+                                    if method == "track" {
+                                        Toggle(isOn: $track) {
+                                            Text("Display Track Name")
+                                        }
+                                    }
+                                    Toggle(isOn: $artist) {
+                                        Text("Display Artist Name")
+                                    }
+                                    Toggle(isOn: $playcount) {
+                                        Text("Display Play Count")
+                                    }
+                                    .padding(.bottom, 10)
+
+                                    VStack {
+             
+                                        Stepper(value: $rows, in: 1...10) {
+                                            Text("Rows: \(rows)")
+                                        }
+                                        Stepper(value: $columns, in: 1...10) {
+                                            Text("Columns: \(columns)")
+                                        }
+                                    }
+
+                                    HStack {
+                                        Text("Text Font Size")
+                                        Picker("Font Size", selection: $fontsize) {
+                                            Text("Small").tag(12)
+                                            Text("Medium").tag(16)
+                                            Text("Large").tag(20)
+                                        }
+                                        .pickerStyle(SegmentedPickerStyle())
+                                    }
                                 }
                             }
-                        HStack {
-                            Text("Period")
-                            Spacer()
-                            Picker("", selection: $period) {
-                                Text("7 Days").tag("7day")
-                                Text("1 Month").tag("1month")
-                                Text("3 Months").tag("3month")
-                                Text("6 Months").tag("6month")
-                                Text("12 Months").tag("12month")
-                                Text("Overall").tag("overall")
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .accentColor(.blue)
-                        }
-                        Toggle(isOn: $album) {
-                            Text("Display Album Name")
-                        }
-                        Toggle(isOn: $artist) {
-                            Text("Display Artist Name")
-                        }
-                        Toggle(isOn: $playcount) {
-                            Text("Display Play Count")
-                        }
-                        Stepper(value: $rows, in: 1...10) {
-                            Text("Rows: \(rows)")
-                        }
-                        Stepper(value: $columns, in: 1...10) {
-                            Text("Columns: \(columns)")
-                        }
-                        HStack {
-                            Text("Font Size")
-                            Picker("Font Size", selection: $fontsize) {
-                                Text("Small").tag(12)
-                                Text("Medium").tag(16)
-                                Text("Large").tag(20)
-                            }
-                            .pickerStyle(SegmentedPickerStyle())
                         }
                     }
+                    .padding(.top, 0)
+                    .padding(.bottom, -1)
                 }
-                .padding(.top, 0)
-                .padding(.bottom, -1)
-                if imageLoader.image != nil {
+                VStack {
+                    /*    if imageLoader.image != nil {
+                     Divider()
+                     .frame(height: 1)
+                     .padding(.horizontal)
+                     .padding(.top, -1)
+                     }*/
                     
-                    Divider()
-                        .frame(height: 1)
-                        .padding(.horizontal)
-                        .padding(.top, -1)
-                }
-                if let errorMessage = imageLoader.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .padding()
-                }
-                if let image = imageLoader.image {
+
+                    if let image = imageLoader.image, isShowingImage, imageLoader.errorMessage == nil {
+                        Button(action: {
+                            isShowingFullscreenImage = true
+                        }) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipShape(Rectangle())
+                                .padding(.top, 20)
+                                .padding(.bottom, 20)
+                        }
+                        .fullScreenCover(isPresented: $isShowingFullscreenImage) {
+                            FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onTapGesture {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                        HStack {
+                            Button(action: {
+                                isShowingShareSheet = true
+                            }) {
+                                Label("Share", systemImage: "square.and.arrow.up")
+                                    .padding()
+                                    .foregroundColor(.blue)
+                                    .background(
+                                        Capsule()
+                                            .stroke(Color.blue, lineWidth: 1)                                        )
+                            }
+                            .sheet(isPresented: $isShowingShareSheet) {
+                                ShareSheet(activityItems: [image])
+                            }
+                            
+                            Button(action: {
+                                imageLoader.image = nil
+                                isShowingImage = false
+                            }) {
+                                Label("Close", systemImage: "xmark")
+                                    .padding()
+                                    .foregroundColor(.red)
+                                    .background(
+                                        Capsule()
+                                            .stroke(Color.red, lineWidth: 1)                                        )
+                            }
+                        }
+                    }
+                    Spacer()
+                    if let errorMessage = imageLoader.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .padding()
+                    }
+                    Color.clear
+                        .frame(width: 10, height: 10) // Modify as per your needs
+                        .overlay(
+                            Group {
+                                if imageLoader.isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                        .padding(.top, 20)
+                                        .padding(.bottom, 0)
+                                }
+                            }
+                        )
                     Button(action: {
-                        isShowingFullscreenImage = true
-                    }) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(.top, 10)
-                            .padding(.bottom, 20)
-                    }
-                    .fullScreenCover(isPresented: $isShowingFullscreenImage) {
-                        FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .onTapGesture {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                    HStack {
-                        Button(action: {
-                            isShowingShareSheet = true
-                        }) {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                                .padding()
-                                .foregroundColor(.blue)
-                                .background(
-                                    Capsule()
-                                        .stroke(Color.blue, lineWidth: 1)                                        )
-                        }
-                        .sheet(isPresented: $isShowingShareSheet) {
-                            ShareSheet(activityItems: [image])
-                        }
-                        
-                        Button(action: {
-                            imageLoader.image = nil
-                        }) {
-                            Label("Close", systemImage: "xmark")
-                                .padding()
-                                .foregroundColor(.red)
-                                .background(
-                                    Capsule()
-                                        .stroke(Color.red, lineWidth: 1)                                        )
-                        }
-                    }
-                }
-                
-                if imageLoader.isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .padding()
-                }
-                Spacer(minLength: 0)
-                Button(action: {
-                    validateUsername() // Validate the username before generating
-                    if isUsernameValid {
                         imageLoader.loadImage(username: username,
                                               method: method,
                                               period: period,
@@ -396,25 +415,29 @@ struct ContentView: View {
                                               columns: columns,
                                               fontsize: fontsize
                         )
+                        isShowingImage = imageLoader.errorMessage == nil
+                    }) {
+                        Text(imageLoader.isLoading ? "Generating..." : "Generate")
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .background(imageLoader.isLoading ? Color.gray : Color.blue)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                            .padding(.top, 10)
+                            .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
                     }
-                }) {
-                    Text(imageLoader.isLoading ? "Generating..." : "Generate")
-                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .background(imageLoader.isLoading ? Color.gray : Color.blue)
-                        .cornerRadius(10)
-                        .padding(.horizontal)
-                        .padding(.top, 10)
-                        .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
+                    .disabled(generateStatus || imageLoader.isLoading || isShowingImage)
+                    .opacity((generateStatus || imageLoader.isLoading || isShowingImage) ? 0 : 1)
+                    .alert(item: $imageLoader.error) { error in
+                        Alert(
+                            title: Text("Error"),
+                            message: Text(error.error.localizedDescription),
+                            dismissButton: .default(Text("OK"))
+                        )
+                    }
                 }
-                .disabled(generateStatus || imageLoader.isLoading || !isUsernameValid)
-                .alert(item: $imageLoader.error) { error in
-                    Alert(
-                        title: Text("Error"),
-                        message: Text(error.error.localizedDescription),
-                        dismissButton: .default(Text("OK"))
-                    )                }            }
+            }
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
@@ -426,7 +449,18 @@ struct ContentView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-        
+        .onChange(of: imageLoader.errorHasOccurred) { newValue in
+            // This will be called every time imageLoader.errorHasOccurred changes
+            if !newValue {
+                // if there's no error, show the image
+                isShowingImage = imageLoader.image != nil
+            } else {
+                // if there's an error, hide the image
+                isShowingImage = false
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }
 
@@ -434,4 +468,3 @@ struct IdentifiableError: Identifiable {
     let id = UUID()
     let error: Error
 }
-
