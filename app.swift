@@ -250,7 +250,6 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            
             ZStack {
                 if !isShowingImage {
                     VStack {
@@ -393,11 +392,11 @@ struct ContentView: View {
                      .padding(.horizontal)
                      .padding(.top, -1)
                      }*/
-                    
-
                     if let image = imageLoader.image, isShowingImage, imageLoader.errorMessage == nil {
                         Button(action: {
-                            isShowingFullscreenImage = true
+                            withAnimation {
+                                isShowingFullscreenImage = true
+                            }
                         })
                         {
                             Image(uiImage: image)
@@ -408,17 +407,24 @@ struct ContentView: View {
                                 .padding(.top, 20)
                                 .padding(.bottom, 20)
                         }
-                        .fullScreenCover(isPresented: $isShowingFullscreenImage) {
+                        .transition(.move(edge: .top)) // Add slide up transition
+                       .fullScreenCover(isPresented: $isShowingFullscreenImage) {
                             FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .onTapGesture {
                             presentationMode.wrappedValue.dismiss()
                         }
-                        Text("Touch Image to view in fullscreen").padding(.bottom, 10)
-                        HStack {
+                        withAnimation {
+                            Text("Touch Image to view in fullscreen")
+                                .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
+                                .padding(.bottom, 10)
+                        }
+                    HStack {
                             Button(action: {
-                                isShowingShareSheet = true
+                                withAnimation {
+                                    isShowingShareSheet = true
+                                }
                             }) {
                                 Label("Share", systemImage: "square.and.arrow.up")
                                     .padding()
@@ -431,17 +437,25 @@ struct ContentView: View {
                                 ShareSheet(activityItems: [image])
                             }
                             Button(action: {
-                                imageLoader.image = nil
-                                isShowingImage = false
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    imageLoader.image = nil
+                                }
+                                withAnimation {
+                                    isShowingImage = false
+                                }
                             }) {
                                 Label("Close", systemImage: "xmark")
                                     .padding()
                                     .foregroundColor(.red)
                                     .background(
                                         Capsule()
-                                            .stroke(Color.red, lineWidth: 1)                                        )
+                                     .stroke(Color.red, lineWidth: 1)                                        )
                             }.padding(.leading, 10)
-                        }
+                        }.transition(.move(edge: .bottom))
+                        .transition(.move(edge: .bottom))
+                        .animation(.spring(), value: isShowingImage)
+
+                        
                     }
                     Spacer()
 
@@ -471,12 +485,11 @@ struct ContentView: View {
                                               columns: columns,
                                               fontsize: fontsize
                         )
-                        isShowingImage = imageLoader.errorMessage == nil
+                            isShowingImage = imageLoader.errorMessage == nil
                     }
 ) {
                         Text(imageLoader.isLoading ? "Generating..." : "Generate")
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
-
                             .edgesIgnoringSafeArea(.bottom)
                             .font(.headline)
                             .foregroundColor(.white)
