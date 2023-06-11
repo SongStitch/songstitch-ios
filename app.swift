@@ -33,12 +33,13 @@ struct FullscreenImageView: View {
                 let magnificationGesture = MagnificationGesture()
                     .updating($scale) { value, scale, _ in
                         let scaledValue = value.magnitude
-                        scale = min(max(scaledValue, 1.0), 3.0)
+                        scale = min(max(scaledValue, 1.0), 10.0)
                     }
                     .onEnded { value in
-                        lastScaleValue = min(max(value, 1.0), 3.0)
+                        lastScaleValue = min(max(value, 1.0), 10.0)
                         isZoomed = value > 1.0
                     }
+                
 
                 let dragGesture = DragGesture()
                     .updating($dragOffset) { value, state, _ in
@@ -279,12 +280,20 @@ struct ContentView: View {
                                     .padding(.top, 10)
                             
                                 VStack {
-                                    Text("Required Options")
+                                /*    Text("Required Options")
                                         .font(.headline)
                                         .padding(.bottom, 10)
-                                        .padding(.top, 10)
+                                        .padding(.top, 10) */
+                                    Text("Your Last.fm Username")
+                                        .font(.headline)
+                                        .padding(.top, 20)
                                     TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
                                     })  .focused($isInputActive)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle()) // Add rounded borders
+                                        .padding(.horizontal, 20)
+                                        .font(.title3)
+                                        .padding(.bottom, 10)
+
                                     
                                         .toolbar {
                                             ToolbarItemGroup(placement: .keyboard) {
@@ -301,26 +310,30 @@ struct ContentView: View {
                                                 .foregroundColor(Color.blue)
                                             }
                                         }
-                                    HStack {
-                                        Text("Period")
-                                        Spacer()
-                                        Picker("", selection: $period) {
-                                            Text("7 Days").tag("7day")
-                                            Text("1 Month").tag("1month")
-                                            Text("3 Months").tag("3month")
-                                            Text("6 Months").tag("6month")
-                                            Text("12 Months").tag("12month")
-                                            Text("Overall").tag("overall")
-                                        }
-                                        .pickerStyle(MenuPickerStyle())
-                                        .accentColor(.blue)
-                                    }
+                              
                                     Group {
                                         
                                         Text("Collage Options")
                                             .font(.headline)
                                             .padding(.bottom, 10)
                                             .padding(.top, 10)
+                                        
+                                        HStack {
+                                            Text("Period")
+                                            Spacer()
+                                            Picker("", selection: $period) {
+                                                Text("7 Days").tag("7day")
+                                                Text("1 Month").tag("1month")
+                                                Text("3 Months").tag("3month")
+                                                Text("6 Months").tag("6month")
+                                                Text("12 Months").tag("12month")
+                                                Text("Overall").tag("overall")
+                                            }
+                                            .pickerStyle(MenuPickerStyle())
+                                            .accentColor(.blue)
+                                            .padding(.bottom, 10)
+                                        }
+                                        
                                         if method != "artist" {
                                             Toggle(isOn: $album) {
                                                 Text("Display Album Name")
@@ -416,7 +429,7 @@ struct ContentView: View {
                             presentationMode.wrappedValue.dismiss()
                         }
                         withAnimation {
-                            Text("Touch Image to view in fullscreen")
+                            Text("Tap the Image to view in fullscreen")
                                 .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
                                 .padding(.bottom, 10)
                         }
@@ -451,16 +464,15 @@ struct ContentView: View {
                                         Capsule()
                                      .stroke(Color.red, lineWidth: 1)                                        )
                             }.padding(.leading, 10)
-                        }.transition(.move(edge: .bottom))
-                        .transition(.move(edge: .bottom))
-                        .animation(.spring(), value: isShowingImage)
+                        }//.transition(.move(edge: .bottom))
+//                        .animation(.spring(), value: isShowingImage)
 
                         
                     }
                     Spacer()
 
                     Color.clear
-                        .frame(width: 10, height: 10) // Modify as per your needs
+                        .frame(width: 20, height: 20) // Modify as per your needs
                         .overlay(
                             Group {
                                 if imageLoader.isLoading {
@@ -494,7 +506,7 @@ struct ContentView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                             .background(imageLoader.isLoading ? Color.gray : Color.blue)
-                            .cornerRadius(10)
+                            .cornerRadius(5)
                             .padding(.horizontal)
                             .padding(.top, 10)
                             .padding(.bottom, 10)

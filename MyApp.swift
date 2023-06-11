@@ -8,5 +8,3 @@ struct MyApp: App {
         }
     }
 }
-
-
