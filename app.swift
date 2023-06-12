@@ -625,7 +625,7 @@ struct ContentView: View {
                 IsShowingGenerate = true
             }
         }
-        .edgesIgnoringSafeArea(.top)        
+        //.edgesIgnoringSafeArea(.top)    
     }
 }
 
