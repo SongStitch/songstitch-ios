@@ -3,6 +3,7 @@ import UIKit
 import Combine
 
 
+// Fullscreen image view logic
 struct FullscreenImageView: View {
     @Binding var isPresented: Bool
     let image: UIImage
