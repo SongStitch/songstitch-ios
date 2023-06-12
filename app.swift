@@ -83,8 +83,6 @@ class ImageLoader: ObservableObject {
     @Published var errorMessage: String? = nil
     @Published var error: IdentifiableError? = nil
     @Published var errorHasOccurred: Bool = false
-
-    
     
     func loadImage(username: String,
                    method: String,
@@ -174,9 +172,46 @@ class SaveToPhotosActivity: UIActivity {
     }
     
     @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
-        // Handle save completion
+        if let error = error {
+            // Handle save failure
+            print("Image save failed: \(error.localizedDescription)")
+        } else {
+            // Handle save success
+            showToast(message: "Image saved successfully!")
+        }
+    }
+    
+    func showToast(message: String) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+                     let window = windowScene.windows.first else {
+                   return
+               }
+        
+        let toastLabel = UILabel(frame: CGRect(x: 16, y: window.bounds.height - 100, width: window.bounds.width - 32, height: 40))
+        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        toastLabel.textColor = UIColor.white
+        toastLabel.font = UIFont.systemFont(ofSize: 14)
+        toastLabel.textAlignment = .center
+        toastLabel.text = message
+        toastLabel.alpha = 0.0
+        toastLabel.layer.cornerRadius = 20
+        toastLabel.clipsToBounds = true
+        
+        window.addSubview(toastLabel)
+        
+        UIView.animate(withDuration: 0.3, delay: 0.1, options: .curveEaseOut, animations: {
+            toastLabel.alpha = 1.0
+        }) { (completed) in
+            UIView.animate(withDuration: 0.3, delay: 2.0, options: .curveEaseIn, animations: {
+                toastLabel.alpha = 0.0
+            }) { (completed) in
+                toastLabel.removeFromSuperview()
+            }
+        }
     }
 }
+
+
 
 struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
@@ -213,6 +248,11 @@ struct ContentView: View {
     @State private var isShowingImage: Bool = false
     @State private var isShowingError = true
     @State private var IsShowingGenerate = true
+    
+    @State private var showMoreToggles = true
+    @State private var toggle1 = false
+    @State private var toggle2 = false
+    @State private var toggle3 = false
 
     func triggerGenerateButton() {
         imageLoader.loadImage(username: username,
@@ -228,7 +268,6 @@ struct ContentView: View {
         )
         isShowingImage = imageLoader.errorMessage == nil
     }
-
     
     init() {
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
@@ -255,18 +294,21 @@ struct ContentView: View {
             ZStack {
                 if !isShowingImage {
                     VStack {
-                        /*       Image("logo")
-                         .resizable()
-                         .aspectRatio(contentMode: .fit)
-                         .padding(.top, 10)
-                         .padding(.bottom, -10)*/
                         Form {
-                            Section(header: Text("Generate Your Last.FM Collage")
+                            Section(header: Text("")
                                 .frame(maxWidth: .infinity) // Extend the header to full width
                                 .font(.headline)
-                                .padding(.vertical, 0) // Add vertical padding to center the text
-                            //    .background(Color.gray.opacity(0.2)) // Optional: add a background color
-                            ){                                    VStack {
+                                .padding(.vertical, -20)
+                            ){
+                                VStack {
+                                    Image("logo")
+                                     .resizable()
+                                     .aspectRatio(contentMode: .fit)
+                                     //.padding(.top, 10)
+                                     //.padding(.bottom, -10)
+                                     .frame(maxWidth: .infinity)
+                                     //.padding(.top, 10)
+                                     .cornerRadius(2)
                                         Text("Select a Collage Type")
                                             .font(.headline)
                                         Picker(selection: $method, label: Text("Collage")) {
@@ -337,20 +379,21 @@ struct ContentView: View {
                                         
                                         if method != "artist" {
                                             Toggle(isOn: $album) {
-                                                Text("Display Album Name")
-                                            }
+                                                Text("Album Name")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+
                                         }
                                         if method == "track" {
                                             Toggle(isOn: $track) {
-                                                Text("Display Track Name")
-                                            }
+                                                Text("Track Name")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
                                         }
                                         Toggle(isOn: $artist) {
-                                            Text("Display Artist Name")
-                                        }
+                                            Text("Artist Name")
+                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
                                         Toggle(isOn: $playcount) {
-                                            Text("Display Play Count")
-                                        }
+                                            Text("Play Count")
+                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
                                         .padding(.bottom, 10)
                                         
                                         VStack {
@@ -363,7 +406,26 @@ struct ContentView: View {
                                                 Text("Columns: \(columns)")
                                             }
                                         } .padding(.top, 10)
-                                        
+                            
+                                        VStack {
+                                            Toggle(isOn: $showMoreToggles) {
+                                                Text("Show More Toggles")
+                                            }
+                                            if showMoreToggles {
+                                                Toggle(isOn: $toggle1) {
+                                                    Text("Toggle 1")
+                                                }
+                                                
+                                                Toggle(isOn: $toggle2) {
+                                                    Text("Toggle 2")
+                                                }
+                                                
+                                                Toggle(isOn: $toggle3) {
+                                                    Text("Toggle 3")
+                                                }
+                                            }
+                                            
+                                        }
                                         
                                         HStack {
                                             VStack {
@@ -389,7 +451,7 @@ struct ContentView: View {
                                         }
                                         
                                     }
-                            }
+                                }
                                 }
          
                             }
@@ -397,7 +459,7 @@ struct ContentView: View {
                         }
                     }
                     .padding(.top, 0)
-                    .padding(.bottom, -1)
+                    .padding(.bottom, 20)
                 }
                 VStack {
                     /*    if imageLoader.image != nil {
@@ -525,7 +587,7 @@ struct ContentView: View {
                         )
                     }
                 }
-            }
+            }.padding(.top, -30)
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
@@ -562,8 +624,8 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 IsShowingGenerate = true
             }
-        }.statusBar(hidden: false)
-        
+        }
+        .edgesIgnoringSafeArea(.top)        
     }
 }
 
@@ -571,4 +633,3 @@ struct IdentifiableError: Identifiable {
     let id = UUID()
     let error: Error
 }
-
