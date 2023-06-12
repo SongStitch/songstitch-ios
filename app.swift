@@ -93,7 +93,8 @@ class ImageLoader: ObservableObject {
                    playcount: Bool,
                    rows: Int,
                    columns: Int,
-                   fontsize: Int) {
+                   fontsize: Int,
+                   compress: Bool) {
         
         self.errorHasOccurred = false
         var components = URLComponents()
@@ -111,6 +112,7 @@ class ImageLoader: ObservableObject {
             URLQueryItem(name: "rows", value: String(rows)),
             URLQueryItem(name: "columns", value: String(columns)),
             URLQueryItem(name: "fontsize", value: String(fontsize)),
+            URLQueryItem(name: "compress", value: String(compress)),
         ]
         
         guard let url = components.url else { return }
@@ -236,6 +238,7 @@ struct ContentView: View {
     @State var artist: Bool = true
     @State var album: Bool = true
     @State var playcount: Bool = true
+    @State var compress: Bool = false
     @State var rows: Int = 3
     @State var columns: Int = 3
     @State var fontsize: Int = 12
@@ -248,12 +251,12 @@ struct ContentView: View {
     @State private var isShowingImage: Bool = false
     @State private var isShowingError = true
     @State private var IsShowingGenerate = true
-    
-    @State private var showMoreToggles = true
-    @State private var toggle1 = false
-    @State private var toggle2 = false
-    @State private var toggle3 = false
+    @State private var showMoreToggles = false
+    @State private var imageOffset = CGSize(width: 0, height: -UIScreen.main.bounds.height)
+    @State var buttonOpacity: Double = 0
 
+
+    
     func triggerGenerateButton() {
         imageLoader.loadImage(username: username,
                               method: method,
@@ -264,12 +267,15 @@ struct ContentView: View {
                               playcount: playcount,
                               rows: rows,
                               columns: columns,
-                              fontsize: fontsize
+                              fontsize: fontsize,
+                              compress: compress
+
         )
         isShowingImage = imageLoader.errorMessage == nil
     }
     
     init() {
+        
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
         //UISplitViewController.appearance().preferredDisplayMode = twoOverSecondary
         
@@ -293,173 +299,153 @@ struct ContentView: View {
         NavigationView {
             ZStack {
                 if !isShowingImage {
-                    VStack {
-                        Form {
-                            Section(header: Text("")
-                                .frame(maxWidth: .infinity) // Extend the header to full width
-                                .font(.headline)
-                                .padding(.vertical, -20)
-                            ){
-                                VStack {
-                                    Image("logo")
-                                     .resizable()
-                                     .aspectRatio(contentMode: .fit)
-                                     //.padding(.top, 10)
-                                     //.padding(.bottom, -10)
-                                     .frame(maxWidth: .infinity)
-                                     //.padding(.top, 10)
-                                     .cornerRadius(2)
-                                        Text("Select a Collage Type")
-                                            .font(.headline)
-                                        Picker(selection: $method, label: Text("Collage")) {
-                                            Text("Top Albums").tag("album")
-                                            Text("Top Artists").tag("artist")
-                                            Text("Top Tracks").tag("track")
-                                        }
-                                        .pickerStyle(SegmentedPickerStyle())
-                                        .accentColor(.blue)
-                                        
-                                    }.padding(.bottom, -10)
-                                    .padding(.top, 10)
-                            
-                                VStack {
-                                /*    Text("Required Options")
-                                        .font(.headline)
-                                        .padding(.bottom, 10)
-                                        .padding(.top, 10) */
-                                    Text("Your Last.fm Username")
-                                        .font(.headline)
-                                        .padding(.top, 20)
-                                    TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
-                                    })  .focused($isInputActive)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle()) // Add rounded borders
-                                        .padding(.horizontal, 20)
-                                        .font(.title3)
-                                        .padding(.bottom, 10)
-
-                                    
-                                        .toolbar {
-                                            ToolbarItemGroup(placement: .keyboard) {
-                                                Button("Generate") {
-                                                    triggerGenerateButton()
-                                                }.foregroundColor(Color.blue)
-
-                                                Spacer()
-
-                                                .foregroundColor(Color.blue)
-                                                Button("Done") {
-                                                    isInputActive = false
-                                                }
-                                                .foregroundColor(Color.blue)
-                                            }
-                                        }
-                              
-                                    Group {
-                                        
-                                        Text("Collage Options")
-                                            .font(.headline)
-                                            .padding(.bottom, 10)
-                                            .padding(.top, 10)
-                                        
-                                        HStack {
-                                            Text("Period")
-                                            Spacer()
-                                            Picker("", selection: $period) {
-                                                Text("7 Days").tag("7day")
-                                                Text("1 Month").tag("1month")
-                                                Text("3 Months").tag("3month")
-                                                Text("6 Months").tag("6month")
-                                                Text("12 Months").tag("12month")
-                                                Text("Overall").tag("overall")
-                                            }
-                                            .pickerStyle(MenuPickerStyle())
-                                            .accentColor(.blue)
-                                            .padding(.bottom, 10)
-                                        }
-                                        
-                                        if method != "artist" {
-                                            Toggle(isOn: $album) {
-                                                Text("Album Name")
-                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
-
-                                        }
-                                        if method == "track" {
-                                            Toggle(isOn: $track) {
-                                                Text("Track Name")
-                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                        }
-                                        Toggle(isOn: $artist) {
-                                            Text("Artist Name")
-                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                        Toggle(isOn: $playcount) {
-                                            Text("Play Count")
-                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                        .padding(.bottom, 10)
-                                        
-                                        VStack {
-                                            Stepper(value: $rows, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
-                                                
-                                                Text("Rows: \(rows)")
-                                            }
-                                            Stepper(value: $columns, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
-                                                
-                                                Text("Columns: \(columns)")
-                                            }
-                                        } .padding(.top, 10)
-                            
-                                        VStack {
-                                            Toggle(isOn: $showMoreToggles) {
-                                                Text("Show More Toggles")
-                                            }
-                                            if showMoreToggles {
-                                                Toggle(isOn: $toggle1) {
-                                                    Text("Toggle 1")
-                                                }
-                                                
-                                                Toggle(isOn: $toggle2) {
-                                                    Text("Toggle 2")
-                                                }
-                                                
-                                                Toggle(isOn: $toggle3) {
-                                                    Text("Toggle 3")
-                                                }
-                                            }
-                                            
-                                        }
-                                        
-                                        HStack {
-                                            VStack {
-                                                Text("Text Font Size")
-                                                Picker("Font Size", selection: $fontsize) {
-                                                    Text("Small").tag(12)
-                                                    Text("Medium").tag(16)
-                                                    Text("Large").tag(20)
-                                                }
-                                                .pickerStyle(SegmentedPickerStyle())
-                                            }.padding(.top, 10)
-                                                .padding(.bottom, 20)
-                                            
-                                        }
-                                    }
+                        VStack {
+                            Form {
+                                Section(header: Text("")
+                                    .frame(maxWidth: .infinity) // Extend the header to full width
+                                    .font(.headline)
+                                        //.padding(.vertical, -20)
+                                ){
                                     VStack {
-                                    if let errorMessage = imageLoader.errorMessage {
-                                        if isShowingError {
-                                            Text(errorMessage)
-                                                .foregroundColor(.red)
-                                        }        else {
-                                            Text("") // Empty text to reserve space
+                                        VStack {
+                                            Image("logo")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .cornerRadius(5)
+                                                .frame(maxWidth: .infinity, maxHeight: 50)
+                                            Text("Collage Type")
+                                                .font(.headline)
+                                            Picker(selection: $method, label: Text("Collage")) {
+                                                Text("Top Albums").tag("album")
+                                                Text("Top Artists").tag("artist")
+                                                Text("Top Tracks").tag("track")
+                                            }
+                                            .pickerStyle(SegmentedPickerStyle())
+                                            .accentColor(.blue)
+                                            
                                         }
+                                        Text("Last.fm Username")
+                                            .font(.headline)
+                                            .padding(.top, 20)
+                                        TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
+                                        })  .focused($isInputActive)
+                                            .textFieldStyle(RoundedBorderTextFieldStyle()) // Add rounded borders
+                                            .padding(.horizontal, 20)
+                                            .font(.title3)
+                                            .padding(.bottom, 10)
                                         
+                                            .toolbar {
+                                                ToolbarItemGroup(placement: .keyboard) {
+                                                    Button("Generate") {
+                                                        triggerGenerateButton()
+                                                    }.foregroundColor(Color.blue)
+                                                    
+                                                    Spacer()
+                                                    
+                                                        .foregroundColor(Color.blue)
+                                                    Button("Done") {
+                                                        isInputActive = false
+                                                    }
+                                                    .foregroundColor(Color.blue)
+                                                }
+                                            }
+                                        
+                                        Group {
+                                            
+                                            Text("Collage Options")
+                                                .font(.headline)
+                                                .padding(.bottom, 10)
+                                                .padding(.top, 10)
+                                            
+                                            HStack {
+                                                Text("Period")
+                                                Spacer()
+                                                Picker("", selection: $period) {
+                                                    Text("7 Days").tag("7day")
+                                                    Text("1 Month").tag("1month")
+                                                    Text("3 Months").tag("3month")
+                                                    Text("6 Months").tag("6month")
+                                                    Text("12 Months").tag("12month")
+                                                    Text("Overall").tag("overall")
+                                                }
+                                                .pickerStyle(MenuPickerStyle())
+                                                .accentColor(.blue)
+                                                //  .padding(.bottom, 10)
+                                            }
+                                            
+                                            if method != "artist" {
+                                                Toggle(isOn: $album) {
+                                                    Text("Album Name")
+                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                            }
+                                            if method == "track" {
+                                                Toggle(isOn: $track) {
+                                                    Text("Track Name")
+                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                            }
+                                            Toggle(isOn: $artist) {
+                                                Text("Artist Name")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                            Toggle(isOn: $playcount) {
+                                                Text("Play Count")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                .padding(.bottom, 10)
+                                            
+                                            VStack {
+                                                Stepper(value: $rows, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
+                                                    
+                                                    Text("Rows: \(rows)")
+                                                }
+                                                Stepper(value: $columns, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
+                                                    
+                                                    Text("Columns: \(columns)")
+                                                }
+                                            } .padding(.top, 10)
+                                            
+                                            VStack {
+                                                Toggle(isOn: $showMoreToggles) {
+                                                    Text("Advanced Options")
+                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                    .padding(.top, 10)
+                                                if showMoreToggles {
+                                                    HStack {
+                                                        VStack {
+                                                            Text("Text Font Size")
+                                                            Picker("Font Size", selection: $fontsize) {
+                                                                Text("Small").tag(12)
+                                                                Text("Medium").tag(16)
+                                                                Text("Large").tag(20)
+                                                            }
+                                                            .pickerStyle(SegmentedPickerStyle())
+                                                        }.padding(.top, 10)
+                                                            .padding(.bottom, 20)
+                                                    }
+                                                    Toggle(isOn: $compress) {
+                                                        Text("Lossy Compress Image")
+                                                    }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                        .padding(.bottom, 10)
+                                                }
+                                            }
+                                        }
+                                        VStack {
+                                            if let errorMessage = imageLoader.errorMessage {
+                                                if isShowingError {
+                                                    Text(errorMessage)
+                                                        .foregroundColor(.red)
+                                                }        else {
+                                                    Text("") // Empty text to reserve space
+                                                }
+                                                
+                                            }
+                                        }
                                     }
-                                }
-                                }
-         
-                            }
-                    
+                                    
+                                }                                                            
                         }
+                        .padding(.top, 0)
+                        .padding(.bottom, 50)
+   
                     }
-                    .padding(.top, 0)
-                    .padding(.bottom, 20)
                 }
                 VStack {
                     /*    if imageLoader.image != nil {
@@ -468,6 +454,7 @@ struct ContentView: View {
                      .padding(.horizontal)
                      .padding(.top, -1)
                      }*/
+                    
                     if let image = imageLoader.image, isShowingImage, imageLoader.errorMessage == nil {
                         Button(action: {
                             withAnimation {
@@ -485,53 +472,80 @@ struct ContentView: View {
                                 .padding(.bottom, 20)
                         }
                         .transition(.move(edge: .top)) // Add slide up transition
-                       .fullScreenCover(isPresented: $isShowingFullscreenImage) {
+                        .fullScreenCover(isPresented: $isShowingFullscreenImage) {
                             FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
                         }
+                        .onAppear {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                imageOffset = CGSize(width: 0, height: 0)                            }
+                        }
+                        .onDisappear {
+                                  withAnimation(.easeInOut(duration: 0.5)) {
+                                      // Exit animation for the image
+                                      // For example, you can animate the opacity
+                                      //imageOffset = 0.0
+                                      imageOffset = CGSize(width: 0, height: -UIScreen.main.bounds.height)
+
+                                  }
+                              }
+                        .offset(imageOffset)
+
                         .buttonStyle(PlainButtonStyle())
                         .onTapGesture {
                             presentationMode.wrappedValue.dismiss()
                         }
-                        withAnimation {
-                            Text("Tap the Image to view in fullscreen")
-                                .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
-                                .padding(.bottom, 10)
-                        }
-                    HStack {
-                            Button(action: {
-                                withAnimation {
+                      
+                                                
+                        VStack {
+                            withAnimation {
+                                Text("Tap the Image to view in fullscreen")
+                                    .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
+                                    .padding(.bottom, 10)
+                            }
+                            HStack {
+                                Button(action: {
                                     isShowingShareSheet = true
+                                }) {
+                                    Label("Share", systemImage: "square.and.arrow.up")
+                                        .padding()
+                                        .foregroundColor(.blue)
+                                        .background(
+                                            Capsule()
+                                                .stroke(Color.blue, lineWidth: 1)                                        )
                                 }
-                            }) {
-                                Label("Share", systemImage: "square.and.arrow.up")
-                                    .padding()
-                                    .foregroundColor(.blue)
-                                    .background(
-                                        Capsule()
-                                            .stroke(Color.blue, lineWidth: 1)                                        )
+                                .sheet(isPresented: $isShowingShareSheet) {
+                                    ShareSheet(activityItems: [image])
+                                }
+                                
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        imageLoader.image = nil
+                                    }
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        isShowingImage = false
+                                    }
+                                }) {
+                                    Label("Close", systemImage: "xmark")
+                                        .padding()
+                                        .foregroundColor(.red)
+                                        .background(
+                                            Capsule()
+                                                .stroke(Color.red, lineWidth: 1)                                        )
+                                }.padding(.leading, 10)
                             }
-                            .sheet(isPresented: $isShowingShareSheet) {
-                                ShareSheet(activityItems: [image])
-                            }
-                            Button(action: {
+                       
+                        }     .opacity(buttonOpacity)
+                            .onAppear {
                                 withAnimation(.easeInOut(duration: 0.5)) {
-                                    imageLoader.image = nil
+                                    buttonOpacity = 1                          }
+                            }
+                            .onDisappear {
+                                withAnimation(.easeInOut(duration: 0.5)) {
+                                    buttonOpacity = 0
                                 }
-                                withAnimation {
-                                    isShowingImage = false
-                                }
-                            }) {
-                                Label("Close", systemImage: "xmark")
-                                    .padding()
-                                    .foregroundColor(.red)
-                                    .background(
-                                        Capsule()
-                                     .stroke(Color.red, lineWidth: 1)                                        )
-                            }.padding(.leading, 10)
-                        }//.transition(.move(edge: .bottom))
-//                        .animation(.spring(), value: isShowingImage)
+                            }
 
-                        
+
                     }
                     Spacer()
 
@@ -559,7 +573,8 @@ struct ContentView: View {
                                               playcount: playcount,
                                               rows: rows,
                                               columns: columns,
-                                              fontsize: fontsize
+                                              fontsize: fontsize,
+                                              compress: compress
                         )
                             isShowingImage = imageLoader.errorMessage == nil
                     }
@@ -588,9 +603,12 @@ struct ContentView: View {
                     }
                 }
             }.padding(.top, -30)
+                .padding(.bottom, -20)
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
+            UIScrollView.appearance().keyboardDismissMode = .onDrag // Dismiss the keyboard when scrolling
+
         }
         .alert(item: $imageLoader.error) { error in
             Alert(
@@ -625,7 +643,10 @@ struct ContentView: View {
                 IsShowingGenerate = true
             }
         }
-        //.edgesIgnoringSafeArea(.top)    
+        .padding(.top, 10)
+        .padding(.bottom, 20)
+        .edgesIgnoringSafeArea(.bottom)
+        
     }
 }
 
