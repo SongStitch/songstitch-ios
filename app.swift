@@ -315,6 +315,7 @@ struct ContentView: View {
                                                 .frame(maxWidth: .infinity, maxHeight: 50)
                                             Text("Collage Type")
                                                 .font(.headline)
+                                                .padding(.top, 10   )
                                             Picker(selection: $method, label: Text("Collage")) {
                                                 Text("Top Albums").tag("album")
                                                 Text("Top Artists").tag("artist")
@@ -330,10 +331,8 @@ struct ContentView: View {
                                         TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
                                         })  .focused($isInputActive)
                                             .textFieldStyle(RoundedBorderTextFieldStyle()) // Add rounded borders
-                                            .padding(.horizontal, 20)
                                             .font(.title3)
                                             .padding(.bottom, 10)
-                                        
                                             .toolbar {
                                                 ToolbarItemGroup(placement: .keyboard) {
                                                     Button("Generate") {
