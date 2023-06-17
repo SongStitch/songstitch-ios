@@ -548,19 +548,21 @@ struct ContentView: View {
                     }
                     Spacer()
 
-                    Color.clear
-                        .frame(width: 20, height: 20) // Modify as per your needs
-                        .overlay(
-                            Group {
-                                if imageLoader.isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                        .padding(.top, 20)
-                                        .padding(.bottom, 0)
-                                }
+                    if imageLoader.isLoading {
+                        ZStack {
+                            Color.clear
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            VStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                    .scaleEffect(2.0) // Adjust the scale factor as needed
+                                Spacer()
                             }
-                        )
-
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    
                     
                     Button(action: {
                         imageLoader.loadImage(username: username,
