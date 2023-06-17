@@ -5,6 +5,7 @@ import Combine
 
 // Fullscreen image view logic
 struct FullscreenImageView: View {
+    
     @Binding var isPresented: Bool
     let image: UIImage
 
@@ -25,7 +26,7 @@ struct FullscreenImageView: View {
                     }) {
                         Image(systemName: "xmark")
                             .foregroundColor(.primary)
-                            .font(.title)
+                            .font(.largeTitle)
                             .padding()
                     }
                 }
@@ -53,10 +54,12 @@ struct FullscreenImageView: View {
 
                 let tapGesture = TapGesture(count: 2)
                     .onEnded {
-                        isZoomed.toggle()
-                        if !isZoomed {
-                            offset = .zero
-                            lastScaleValue = 1.0
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isZoomed.toggle()
+                            if !isZoomed {
+                                offset = .zero
+                                lastScaleValue = 1.0
+                            }
                         }
                     }
 
@@ -472,7 +475,9 @@ struct ContentView: View {
                         }
                         .transition(.move(edge: .top)) // Add slide up transition
                         .fullScreenCover(isPresented: $isShowingFullscreenImage) {
-                            FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
+                            withAnimation {
+                                FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
+                            }
                         }
                         .onAppear {
                             withAnimation(.easeInOut(duration: 0.5)) {
@@ -500,6 +505,7 @@ struct ContentView: View {
                                 Text("Tap the Image to view in fullscreen")
                                     .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
                                     .padding(.bottom, 10)
+                                   // .fontWeight(.thin)
                             }
                             HStack {
                                 Button(action: {
@@ -585,6 +591,21 @@ struct ContentView: View {
                             .edgesIgnoringSafeArea(.bottom)
                             .font(.headline)
                             .foregroundColor(.white)
+                            .background(
+                                    ZStack {
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        .cornerRadius(15)
+                                        .opacity(0.8)
+                                        
+                                        if imageLoader.isLoading {
+                                            Color.gray
+                                        }
+                                    }
+                                )
                             .background(imageLoader.isLoading ? Color.gray : Color.blue)
                             .cornerRadius(15)
                             .padding(.horizontal)
@@ -648,7 +669,7 @@ struct ContentView: View {
         .padding(.top, 10)
         .padding(.bottom, 20)
         .edgesIgnoringSafeArea(.bottom)
-        
+    
     }
 }
 
