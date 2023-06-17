@@ -591,7 +591,8 @@ struct ContentView: View {
                             .zIndex(-1)
                             .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
                     }
-                    .disabled(generateStatus || imageLoader.isLoading || isShowingImage)
+                    .disabled(generateStatus || imageLoader.isLoading || isShowingImage || username == "")
+                    .opacity((username == "") ? 0.5 : 1)
                     .opacity((generateStatus || imageLoader.isLoading || isShowingImage || !IsShowingGenerate) ? 0 : 1)
                     .alert(item: $imageLoader.error) { error in
                         Alert(
@@ -602,7 +603,7 @@ struct ContentView: View {
                     }
                 }
             }.padding(.top, -30)
-                .padding(.bottom, -20)
+                //.padding(.bottom, -20)
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
