@@ -10,7 +10,7 @@
 		B76903602A3E531900BE7736 /* SongStitchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B769035F2A3E531900BE7736 /* SongStitchApp.swift */; };
 		B76903622A3E531900BE7736 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B76903612A3E531900BE7736 /* ContentView.swift */; };
 		B76903672A3E531A00BE7736 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B76903662A3E531A00BE7736 /* Preview Assets.xcassets */; };
-		B769036E2A3E535A00BE7736 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B769036D2A3E535A00BE7736 /* Assets.xcassets */; };
+		B769037F2A3E5D7300BE7736 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B769037E2A3E5D7300BE7736 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,8 +18,8 @@
 		B769035F2A3E531900BE7736 /* SongStitchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongStitchApp.swift; sourceTree = "<group>"; };
 		B76903612A3E531900BE7736 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B76903662A3E531A00BE7736 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		B769036D2A3E535A00BE7736 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = ../../SongStitch.swiftpm/Assets.xcassets; sourceTree = "<group>"; };
 		B769036F2A3E546A00BE7736 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B769037E2A3E5D7300BE7736 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,8 +54,8 @@
 			children = (
 				B769036F2A3E546A00BE7736 /* Info.plist */,
 				B769035F2A3E531900BE7736 /* SongStitchApp.swift */,
+				B769037E2A3E5D7300BE7736 /* Assets.xcassets */,
 				B76903612A3E531900BE7736 /* ContentView.swift */,
-				B769036D2A3E535A00BE7736 /* Assets.xcassets */,
 				B76903652A3E531A00BE7736 /* Preview Content */,
 			);
 			path = SongStitch;
@@ -127,8 +127,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B769037F2A3E5D7300BE7736 /* Assets.xcassets in Resources */,
 				B76903672A3E531A00BE7736 /* Preview Assets.xcassets in Resources */,
-				B769036E2A3E535A00BE7736 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
