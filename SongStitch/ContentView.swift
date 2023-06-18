@@ -79,7 +79,6 @@ struct FullscreenImageView: View {
     }
 }
 
-
 class ImageLoader: ObservableObject {
     @Published var image: UIImage? = nil
     @Published var isLoading: Bool = false
