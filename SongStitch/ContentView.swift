@@ -24,7 +24,7 @@ struct FullscreenImageView: View {
                     Button(action: {
                         isPresented = false
                     }) {
-                        Image(systemName: "xmark")
+                        Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.primary)
                             .font(.largeTitle)
                             .padding()
@@ -529,7 +529,7 @@ struct ContentView: View {
                                 Text("Tap the Image to view in fullscreen")
                                     .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
                                     .padding(.bottom, 10)
-                                   // .fontWeight(.thin)
+                                    .fontWeight(.thin)
                             }
                             HStack {
                                 Button(action: {
