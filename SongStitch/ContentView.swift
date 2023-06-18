@@ -193,8 +193,32 @@ class SaveToPhotosActivity: UIActivity {
                }
         
         let toastLabel = UILabel(frame: CGRect(x: 16, y: window.bounds.height - 100, width: window.bounds.width - 32, height: 40))
-        toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        toastLabel.textColor = UIColor.white
+
+        if #available(iOS 13.0, *) {
+            let backgroundColor = UIColor { (traitCollection) -> UIColor in
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor.white.withAlphaComponent(0.6)
+                } else {
+                    return UIColor.black.withAlphaComponent(0.6)
+                }
+            }
+
+            toastLabel.backgroundColor = backgroundColor
+
+            let textColor = UIColor { (traitCollection) -> UIColor in
+                if traitCollection.userInterfaceStyle == .dark {
+                    return UIColor.black
+                } else {
+                    return UIColor.white
+                }
+            }
+
+            toastLabel.textColor = textColor
+        } else {
+            toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+            toastLabel.textColor = UIColor.white
+        }
+
         toastLabel.font = UIFont.systemFont(ofSize: 14)
         toastLabel.textAlignment = .center
         toastLabel.text = message
