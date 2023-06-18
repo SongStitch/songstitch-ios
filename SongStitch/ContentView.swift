@@ -350,7 +350,18 @@ struct ContentView: View {
                                             }
                                             .pickerStyle(SegmentedPickerStyle())
                                             .accentColor(.blue)
-                                            
+                                            .onChange(of: method) { _ in
+                                                           if method == "album" {
+                                                               rows = min(rows, 15)
+                                                               columns = min(columns, 15)
+                                                           } else if method == "track" {
+                                                               rows = min(rows, 5)
+                                                               columns = min(columns, 5)
+                                                           } else {
+                                                               rows = min(rows, 10)
+                                                               columns = min(columns, 10)
+                                                           }
+                                                       }
                                         }
                                         Text("Last.fm Username")
                                             .font(.headline)
@@ -417,16 +428,24 @@ struct ContentView: View {
                                             }.toggleStyle(SwitchToggleStyle(tint: .blue))
                                                 .padding(.bottom, 10)
                                             
+                                            var stepperRange: ClosedRange<Int> {
+                                                if method == "album" {
+                                                    return 1...15
+                                                } else if method == "track" {
+                                                    return 1...5
+                                                } else {
+                                                    return 1...10
+                                                }
+                                            }
                                             VStack {
-                                                Stepper(value: $rows, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
-                                                    
-                                                    Text("Rows: \(rows)")
-                                                }
-                                                Stepper(value: $columns, in: (method == "album" ? 1...15 : (method == "track"  ? 1...5 : 1...10))) {
-                                                    
-                                                    Text("Columns: \(columns)")
-                                                }
-                                            } .padding(.top, 10)
+                                                   Stepper(value: $rows, in: stepperRange) {
+                                                       Text("Rows: \(rows)")
+                                                   }
+                                                   Stepper(value: $columns, in: stepperRange) {
+                                                       Text("Columns: \(columns)")
+                                                   }
+                                               }
+                                               .padding(.top, 10)
                                             
                                             VStack {
                                                 Toggle(isOn: $showMoreToggles) {
