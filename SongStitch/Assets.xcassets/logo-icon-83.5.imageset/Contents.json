@@ -1,15 +1,17 @@
 {
   "images" : [
     {
+      "filename" : "AppIcon~ios-marketing.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "logo-icon-83.5@2x.png",
+      "filename" : "AppIcon~ios-marketing 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "AppIcon~ios-marketing 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

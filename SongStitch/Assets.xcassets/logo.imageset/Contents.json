@@ -1,7 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "logo.png",
+      "filename" : "songstitch_logo.png",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "songstitch_logo_dark.png",
       "idiom" : "universal"
     }
   ],
