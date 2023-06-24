@@ -547,7 +547,7 @@ struct ContentView: View {
                                 Text("Tap the Image to view in fullscreen")
                                     .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
                                     .padding(.bottom, 10)
-                                    .fontWeight(.thin)
+                                    .font(.system(size: 14, weight: .thin))
                             }
                             HStack {
                                 Button(action: {
