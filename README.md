@@ -24,5 +24,6 @@ A <em>blazingly fast</em> iOS application for generating LastFM collages.
 <br/>
 
 <p align="center">
-  <img alt="SongStitch Collage" src="https://raw.githubusercontent.com/SongStitch/song-stitch/main/docs/collage.png" width="300px"/>
+  <img alt="SongStitch Collage" src="assets/app_store_image_1.png" width="300px"/>
+  <img alt="SongStitch Collage" src="assets/app_store_image_2.png" width="300px"/>
 </p>
