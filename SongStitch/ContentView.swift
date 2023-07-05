@@ -2,20 +2,19 @@ import SwiftUI
 import UIKit
 import Combine
 
-
-// Fullscreen image view logic
+/* Fullscreen image view logic */
 struct FullscreenImageView: View {
     
     @Binding var isPresented: Bool
     let image: UIImage
-
+    
     @GestureState private var scale: CGFloat = 1.0
     @State private var isZoomed = false
     @State private var lastScaleValue: CGFloat = 1.0
-
+    
     @State private var offset: CGSize = .zero
     @GestureState private var dragOffset: CGSize = .zero
-
+    
     var body: some View {
         ZStack {
             VStack {
@@ -31,7 +30,7 @@ struct FullscreenImageView: View {
                     }
                 }
                 Spacer()
-
+                
                 let magnificationGesture = MagnificationGesture()
                     .updating($scale) { value, scale, _ in
                         let scaledValue = value.magnitude
@@ -42,7 +41,7 @@ struct FullscreenImageView: View {
                         isZoomed = value > 1.0
                     }
                 
-
+                
                 let dragGesture = DragGesture()
                     .updating($dragOffset) { value, state, _ in
                         state = value.translation
@@ -51,7 +50,7 @@ struct FullscreenImageView: View {
                         offset.width += value.translation.width
                         offset.height += value.translation.height
                     }
-
+                
                 let tapGesture = TapGesture(count: 2)
                     .onEnded {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -62,7 +61,7 @@ struct FullscreenImageView: View {
                             }
                         }
                     }
-
+                
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: isZoomed ? .fill : .fit)
@@ -71,14 +70,16 @@ struct FullscreenImageView: View {
                     .gesture(magnificationGesture.simultaneously(with: dragGesture))
                     .gesture(tapGesture)
                     .padding()
-
+                
                 Spacer()
             }
         }
+        .padding(3.0)
         .statusBar(hidden: true)
     }
 }
 
+/* Image loading logic */
 class ImageLoader: ObservableObject {
     @Published var image: UIImage? = nil
     @Published var isLoading: Bool = false
@@ -131,7 +132,7 @@ class ImageLoader: ObservableObject {
                           httpResponse.statusCode != 200,
                           let responseData = data,
                           let errorMessage = String(data: responseData, encoding: .utf8) {
-                          self.errorHasOccurred = true
+                    self.errorHasOccurred = true
                     self.errorMessage = "Error: \(errorMessage)"
                 } else if let data = data, let image = UIImage(data: data) {
                     self.image = image
@@ -141,6 +142,7 @@ class ImageLoader: ObservableObject {
     }
 }
 
+/* Logic to save to Photos */
 class SaveToPhotosActivity: UIActivity {
     override var activityTitle: String? {
         return "Save to Photos"
@@ -177,22 +179,20 @@ class SaveToPhotosActivity: UIActivity {
     
     @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
         if let error = error {
-            // Handle save failure
             print("Image save failed: \(error.localizedDescription)")
         } else {
-            // Handle save success
             showToast(message: "Image saved successfully!")
         }
     }
     
     func showToast(message: String) {
         guard let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-                     let window = windowScene.windows.first else {
-                   return
-               }
+              let window = windowScene.windows.first else {
+            return
+        }
         
         let toastLabel = UILabel(frame: CGRect(x: 16, y: window.bounds.height - 100, width: window.bounds.width - 32, height: 40))
-
+        
         if #available(iOS 13.0, *) {
             let backgroundColor = UIColor { (traitCollection) -> UIColor in
                 if traitCollection.userInterfaceStyle == .dark {
@@ -201,9 +201,9 @@ class SaveToPhotosActivity: UIActivity {
                     return UIColor.black.withAlphaComponent(0.6)
                 }
             }
-
+            
             toastLabel.backgroundColor = backgroundColor
-
+            
             let textColor = UIColor { (traitCollection) -> UIColor in
                 if traitCollection.userInterfaceStyle == .dark {
                     return UIColor.black
@@ -211,13 +211,13 @@ class SaveToPhotosActivity: UIActivity {
                     return UIColor.white
                 }
             }
-
+            
             toastLabel.textColor = textColor
         } else {
             toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
             toastLabel.textColor = UIColor.white
         }
-
+        
         toastLabel.font = UIFont.systemFont(ofSize: 14)
         toastLabel.textAlignment = .center
         toastLabel.text = message
@@ -240,13 +240,13 @@ class SaveToPhotosActivity: UIActivity {
 }
 
 
-
+/* Share sheet options */
 struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
     
     func makeUIViewController(context: UIViewControllerRepresentableContext<ShareSheet>) -> UIActivityViewController {
         let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: [SaveToPhotosActivity()])
-        controller.excludedActivityTypes = [.addToReadingList, .openInIBooks] // Optional: Exclude specific activity types
+        controller.excludedActivityTypes = [.addToReadingList, .openInIBooks]
         return controller
     }
     
@@ -280,8 +280,8 @@ struct ContentView: View {
     @State private var showMoreToggles = false
     @State private var imageOffset = CGSize(width: 0, height: -UIScreen.main.bounds.height)
     @State var buttonOpacity: Double = 0
-
-
+    
+    
     
     func triggerGenerateButton() {
         imageLoader.loadImage(username: username,
@@ -295,7 +295,7 @@ struct ContentView: View {
                               columns: columns,
                               fontsize: fontsize,
                               compress: compress
-
+                              
         )
         isShowingImage = imageLoader.errorMessage == nil
     }
@@ -303,11 +303,7 @@ struct ContentView: View {
     init() {
         
         _username = State(initialValue: UserDefaults.standard.string(forKey: "Username") ?? "")
-        //UISplitViewController.appearance().preferredDisplayMode = twoOverSecondary
-        
         UISplitViewController().preferredDisplayMode = .twoDisplaceSecondary
-        //UINavigationController().viewControllers = UINavigationController()
-        
         
         if UITraitCollection.current.userInterfaceStyle == .dark {
             UITextField.appearance().tintColor = UIColor.white
@@ -325,180 +321,171 @@ struct ContentView: View {
         NavigationView {
             ZStack {
                 if !isShowingImage {
-                        VStack {
-                            Form {
-                                Section(header: Text("")
-                                    .frame(maxWidth: .infinity) // Extend the header to full width
-                                    .font(.headline)
-                                        //.padding(.vertical, -20)
-                                ){
+                    VStack {
+                        Form {
+                            Section(header: Text("")
+                                .frame(maxWidth: .infinity)
+                                .font(.headline)
+                            ){
+                                VStack {
                                     VStack {
-                                        VStack {
-                                            Image("logo")
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .cornerRadius(5)
-                                                .frame(maxWidth: .infinity, maxHeight: 50)
-                                            Text("Collage Type")
-                                                .font(.headline)
-                                                .padding(.top, 10   )
-                                            Picker(selection: $method, label: Text("Collage")) {
-                                                Text("Top Albums").tag("album")
-                                                Text("Top Artists").tag("artist")
-                                                Text("Top Tracks").tag("track")
-                                            }
-                                            .pickerStyle(SegmentedPickerStyle())
-                                            .accentColor(.blue)
-                                            .onChange(of: method) { _ in
-                                                           if method == "album" {
-                                                               rows = min(rows, 15)
-                                                               columns = min(columns, 15)
-                                                           } else if method == "track" {
-                                                               rows = min(rows, 5)
-                                                               columns = min(columns, 5)
-                                                           } else {
-                                                               rows = min(rows, 10)
-                                                               columns = min(columns, 10)
-                                                           }
-                                                       }
-                                        }
-                                        Text("Last.fm Username")
+                                        Image("logo")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .cornerRadius(5)
+                                            .frame(maxWidth: .infinity, maxHeight: 50)
+                                        Text("Collage Type")
                                             .font(.headline)
-                                            .padding(.top, 20)
-                                        TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
-                                        })  .focused($isInputActive)
-                                            .textFieldStyle(RoundedBorderTextFieldStyle()) // Add rounded borders
-                                            .font(.title3)
-                                            .padding(.bottom, 10)
-                                            .toolbar {
-                                                ToolbarItemGroup(placement: .keyboard) {
-                                                    Button("Generate") {
-                                                        triggerGenerateButton()
-                                                    }.foregroundColor(Color.blue)
-                                                    
-                                                    Spacer()
-                                                    
-                                                        .foregroundColor(Color.blue)
-                                                    Button("Done") {
-                                                        isInputActive = false
-                                                    }
-                                                    .foregroundColor(Color.blue)
-                                                }
-                                            }
-                                        
-                                        Group {
-                                            
-                                            Text("Collage Options")
-                                                .font(.headline)
-                                                .padding(.bottom, 10)
-                                                .padding(.top, 10)
-                                            
-                                            HStack {
-                                                Text("Period")
-                                                Spacer()
-                                                Picker("", selection: $period) {
-                                                    Text("7 Days").tag("7day")
-                                                    Text("1 Month").tag("1month")
-                                                    Text("3 Months").tag("3month")
-                                                    Text("6 Months").tag("6month")
-                                                    Text("12 Months").tag("12month")
-                                                    Text("Overall").tag("overall")
-                                                }
-                                                .pickerStyle(MenuPickerStyle())
-                                                .accentColor(.blue)
-                                                //  .padding(.bottom, 10)
-                                            }
-                                            
-                                            if method != "artist" {
-                                                Toggle(isOn: $album) {
-                                                    Text("Album Name")
-                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                            }
-                                            if method == "track" {
-                                                Toggle(isOn: $track) {
-                                                    Text("Track Name")
-                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                            }
-                                            Toggle(isOn: $artist) {
-                                                Text("Artist Name")
-                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                            Toggle(isOn: $playcount) {
-                                                Text("Play Count")
-                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                                .padding(.bottom, 10)
-                                            
-                                            var stepperRange: ClosedRange<Int> {
-                                                if method == "album" {
-                                                    return 1...15
-                                                } else if method == "track" {
-                                                    return 1...5
-                                                } else {
-                                                    return 1...10
-                                                }
-                                            }
-                                            VStack {
-                                                   Stepper(value: $rows, in: stepperRange) {
-                                                       Text("Rows: \(rows)")
-                                                   }
-                                                   Stepper(value: $columns, in: stepperRange) {
-                                                       Text("Columns: \(columns)")
-                                                   }
-                                               }
-                                               .padding(.top, 10)
-                                            
-                                            VStack {
-                                                Toggle(isOn: $showMoreToggles) {
-                                                    Text("Advanced Options")
-                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                                    .padding(.top, 10)
-                                                if showMoreToggles {
-                                                    HStack {
-                                                        VStack {
-                                                            Text("Text Font Size")
-                                                            Picker("Font Size", selection: $fontsize) {
-                                                                Text("Small").tag(12)
-                                                                Text("Medium").tag(16)
-                                                                Text("Large").tag(20)
-                                                            }
-                                                            .pickerStyle(SegmentedPickerStyle())
-                                                        }.padding(.top, 10)
-                                                            .padding(.bottom, 20)
-                                                    }
-                                                    Toggle(isOn: $compress) {
-                                                        Text("Lossy Compress Image")
-                                                    }.toggleStyle(SwitchToggleStyle(tint: .blue))
-                                                        .padding(.bottom, 10)
-                                                }
-                                            }
+                                            .padding(.top, 10   )
+                                        Picker(selection: $method, label: Text("Collage")) {
+                                            Text("Top Albums").tag("album")
+                                            Text("Top Artists").tag("artist")
+                                            Text("Top Tracks").tag("track")
                                         }
-                                        VStack {
-                                            if let errorMessage = imageLoader.errorMessage {
-                                                if isShowingError {
-                                                    Text(errorMessage)
-                                                        .foregroundColor(.red)
-                                                }        else {
-                                                    Text("") // Empty text to reserve space
-                                                }
-                                                
+                                        .pickerStyle(SegmentedPickerStyle())
+                                        .accentColor(.blue)
+                                        .onChange(of: method) { _ in
+                                            if method == "album" {
+                                                rows = min(rows, 15)
+                                                columns = min(columns, 15)
+                                            } else if method == "track" {
+                                                rows = min(rows, 5)
+                                                columns = min(columns, 5)
+                                            } else {
+                                                rows = min(rows, 10)
+                                                columns = min(columns, 10)
                                             }
                                         }
                                     }
+                                    Text("Last.fm Username")
+                                        .font(.headline)
+                                        .padding(.top, 20)
+                                    TextField("Last.FM Username", text: $username, onEditingChanged: { _ in
+                                    })  .focused($isInputActive)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .font(.title3)
+                                        .padding(.bottom, 10)
+                                        .toolbar {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Button("Generate") {
+                                                    triggerGenerateButton()
+                                                }.foregroundColor(Color.blue)
+                                                
+                                                Spacer()
+                                                
+                                                    .foregroundColor(Color.blue)
+                                                Button("Done") {
+                                                    isInputActive = false
+                                                }
+                                                .foregroundColor(Color.blue)
+                                            }
+                                        }
                                     
+                                    Group {
+                                        
+                                        Text("Collage Options")
+                                            .font(.headline)
+                                            .padding(.bottom, 10)
+                                            .padding(.top, 10)
+                                        
+                                        HStack {
+                                            Text("Period")
+                                            Spacer()
+                                            Picker("", selection: $period) {
+                                                Text("7 Days").tag("7day")
+                                                Text("1 Month").tag("1month")
+                                                Text("3 Months").tag("3month")
+                                                Text("6 Months").tag("6month")
+                                                Text("12 Months").tag("12month")
+                                                Text("Overall").tag("overall")
+                                            }
+                                            .pickerStyle(MenuPickerStyle())
+                                            .accentColor(.blue)
+                                        }
+                                        
+                                        if method != "artist" {
+                                            Toggle(isOn: $album) {
+                                                Text("Album Name")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                        }
+                                        if method == "track" {
+                                            Toggle(isOn: $track) {
+                                                Text("Track Name")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                        }
+                                        Toggle(isOn: $artist) {
+                                            Text("Artist Name")
+                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                        Toggle(isOn: $playcount) {
+                                            Text("Play Count")
+                                        }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                            .padding(.bottom, 10)
+                                        
+                                        var stepperRange: ClosedRange<Int> {
+                                            if method == "album" {
+                                                return 1...15
+                                            } else if method == "track" {
+                                                return 1...5
+                                            } else {
+                                                return 1...10
+                                            }
+                                        }
+                                        VStack {
+                                            Stepper(value: $rows, in: stepperRange) {
+                                                Text("Rows: \(rows)")
+                                            }
+                                            Stepper(value: $columns, in: stepperRange) {
+                                                Text("Columns: \(columns)")
+                                            }
+                                        }
+                                        .padding(.top, 10)
+                                        
+                                        VStack {
+                                            Toggle(isOn: $showMoreToggles) {
+                                                Text("Advanced Options")
+                                            }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                .padding(.top, 10)
+                                            if showMoreToggles {
+                                                HStack {
+                                                    VStack {
+                                                        Text("Text Font Size")
+                                                        Picker("Font Size", selection: $fontsize) {
+                                                            Text("Small").tag(12)
+                                                            Text("Medium").tag(16)
+                                                            Text("Large").tag(20)
+                                                        }
+                                                        .pickerStyle(SegmentedPickerStyle())
+                                                    }.padding(.top, 10)
+                                                        .padding(.bottom, 20)
+                                                }
+                                                Toggle(isOn: $compress) {
+                                                    Text("Lossy Compress Image")
+                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                    .padding(.bottom, 10)
+                                            }
+                                        }
+                                    }
+                                    VStack {
+                                        if let errorMessage = imageLoader.errorMessage {
+                                            if isShowingError {
+                                                Text(errorMessage)
+                                                    .foregroundColor(.red)
+                                            }        else {
+                                                Text("") // Empty text to reserve space
+                                            }
+                                            
+                                        }
+                                    }
                                 }
+                                
+                            }
                         }
                         .padding(.top, 0)
                         .padding(.bottom, 50)
-   
+                        
                     }
                 }
                 VStack {
-                    /*    if imageLoader.image != nil {
-                     Divider()
-                     .frame(height: 1)
-                     .padding(.horizontal)
-                     .padding(.top, -1)
-                     }*/
-                    
                     if let image = imageLoader.image, isShowingImage, imageLoader.errorMessage == nil {
                         Button(action: {
                             withAnimation {
@@ -509,13 +496,12 @@ struct ContentView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
-                                //.frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .frame(maxWidth: UIScreen.main.bounds.width * 0.95, maxHeight: .infinity)
                                 .clipShape(Rectangle())
                                 .padding(.top, 20)
                                 .padding(.bottom, 20)
                         }
-                        .transition(.move(edge: .top)) // Add slide up transition
+                        .transition(.move(edge: .top))
                         .fullScreenCover(isPresented: $isShowingFullscreenImage) {
                             withAnimation {
                                 FullscreenImageView(isPresented: $isShowingFullscreenImage, image: image)
@@ -526,26 +512,23 @@ struct ContentView: View {
                                 imageOffset = CGSize(width: 0, height: 0)                            }
                         }
                         .onDisappear {
-                                  withAnimation(.easeInOut(duration: 0.5)) {
-                                      // Exit animation for the image
-                                      // For example, you can animate the opacity
-                                      //imageOffset = 0.0
-                                      imageOffset = CGSize(width: 0, height: -UIScreen.main.bounds.height)
-
-                                  }
-                              }
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                imageOffset = CGSize(width: 0, height: -UIScreen.main.bounds.height)
+                                
+                            }
+                        }
                         .offset(imageOffset)
-
+                        
                         .buttonStyle(PlainButtonStyle())
                         .onTapGesture {
                             presentationMode.wrappedValue.dismiss()
                         }
-                      
-                                                
+                        
+                        
                         VStack {
                             withAnimation {
                                 Text("Tap the Image to view in fullscreen")
-                                    .opacity(isShowingFullscreenImage ? 0 : 1) // Start with opacity 0 if fullscreen image is showing
+                                    .opacity(isShowingFullscreenImage ? 0 : 1)
                                     .padding(.bottom, 10)
                                     .font(.system(size: 14, weight: .thin))
                             }
@@ -580,7 +563,7 @@ struct ContentView: View {
                                                 .stroke(Color.red, lineWidth: 1)                                        )
                                 }.padding(.leading, 10)
                             }
-                       
+                            
                         }     .opacity(buttonOpacity)
                             .onAppear {
                                 withAnimation(.easeInOut(duration: 0.5)) {
@@ -591,20 +574,20 @@ struct ContentView: View {
                                     buttonOpacity = 0
                                 }
                             }
-
-
+                        
+                        
                     }
                     Spacer()
-
+                    
                     if imageLoader.isLoading {
                         ZStack {
                             Color.clear
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                             VStack {
                                 Spacer()
-                                ProgressView()
+                                `ProgressView`()
                                     .progressViewStyle(CircularProgressViewStyle())
-                                    .scaleEffect(2.0) // Adjust the scale factor as needed
+                                    .scaleEffect(2.0)
                                 Spacer()
                             }
                         }
@@ -625,29 +608,29 @@ struct ContentView: View {
                                               fontsize: fontsize,
                                               compress: compress
                         )
-                            isShowingImage = imageLoader.errorMessage == nil
+                        isShowingImage = imageLoader.errorMessage == nil
                     }
-) {
+                    ) {
                         Text(imageLoader.isLoading ? "Generating..." : "Generate")
                             .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
                             .edgesIgnoringSafeArea(.bottom)
                             .font(.headline)
                             .foregroundColor(.white)
                             .background(
-                                    ZStack {
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                        .cornerRadius(15)
-                                        .opacity(0.8)
-                                        
-                                        if imageLoader.isLoading {
-                                            Color.gray
-                                        }
+                                ZStack {
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    .cornerRadius(15)
+                                    .opacity(0.8)
+                                    
+                                    if imageLoader.isLoading {
+                                        Color.gray
                                     }
-                                )
+                                }
+                            )
                             .background(imageLoader.isLoading ? Color.gray : Color.blue)
                             .cornerRadius(15)
                             .padding(.horizontal)
@@ -667,13 +650,12 @@ struct ContentView: View {
                         )
                     }
                 }
-            }.padding(.top, -30)
-                //.padding(.bottom, -20)
+            }
         }
         .onDisappear {
             UserDefaults.standard.set(username, forKey: "Username")
-            UIScrollView.appearance().keyboardDismissMode = .onDrag // Dismiss the keyboard when scrolling
-
+            UIScrollView.appearance().keyboardDismissMode = .onDrag
+            
         }
         .alert(item: $imageLoader.error) { error in
             Alert(
@@ -683,16 +665,11 @@ struct ContentView: View {
             )
         }
         .onChange(of: imageLoader.errorHasOccurred) { newValue in
-            // This will be called every time imageLoader.errorHasOccurred changes
             if !newValue {
-                // if there's no error, show the image
-                    isShowingError = false
+                isShowingError = false
                 isShowingImage = imageLoader.image != nil
             } else {
-                // if there's an error, hide the image
-                //withAnimation(.easeIn(duration: 0.5)) {
-                    isShowingError = true
-                //}
+                isShowingError = true
                 isShowingImage = false
             }
         }
@@ -708,10 +685,9 @@ struct ContentView: View {
                 IsShowingGenerate = true
             }
         }
-        .padding(.top, 10)
-        .padding(.bottom, 20)
+        .padding(.top, 0)
+        .padding(.bottom, 0)
         .edgesIgnoringSafeArea(.bottom)
-    
     }
 }
 
