@@ -97,7 +97,8 @@ class ImageLoader: ObservableObject {
                    rows: Int,
                    columns: Int,
                    fontsize: Int,
-                   compress: Bool) {
+                   webp: Bool,
+                   boldfont: Bool) {
         
         self.errorHasOccurred = false
         var components = URLComponents()
@@ -115,7 +116,8 @@ class ImageLoader: ObservableObject {
             URLQueryItem(name: "rows", value: String(rows)),
             URLQueryItem(name: "columns", value: String(columns)),
             URLQueryItem(name: "fontsize", value: String(fontsize)),
-            URLQueryItem(name: "compress", value: String(compress)),
+            URLQueryItem(name: "webp", value: String(webp)),
+            URLQueryItem(name: "boldfont", value: String(boldfont)),
         ]
         
         guard let url = components.url else { return }
@@ -264,7 +266,8 @@ struct ContentView: View {
     @State var artist: Bool = true
     @State var album: Bool = true
     @State var playcount: Bool = true
-    @State var compress: Bool = false
+    @State var webp: Bool = false
+    @State var boldfont: Bool = false
     @State var rows: Int = 3
     @State var columns: Int = 3
     @State var fontsize: Int = 12
@@ -294,7 +297,9 @@ struct ContentView: View {
                               rows: rows,
                               columns: columns,
                               fontsize: fontsize,
-                              compress: compress
+                              webp: webp,
+                              boldfont: boldfont
+                              
                               
         )
         isShowingImage = imageLoader.errorMessage == nil
@@ -450,6 +455,7 @@ struct ContentView: View {
                                                     VStack {
                                                         Text("Text Font Size")
                                                         Picker("Font Size", selection: $fontsize) {
+                                                            Text("Extra Small").tag(10)
                                                             Text("Small").tag(12)
                                                             Text("Medium").tag(16)
                                                             Text("Large").tag(20)
@@ -458,8 +464,12 @@ struct ContentView: View {
                                                     }.padding(.top, 10)
                                                         .padding(.bottom, 20)
                                                 }
-                                                Toggle(isOn: $compress) {
-                                                    Text("Lossy Compress Image")
+                                                Toggle(isOn: $webp) {
+                                                    Text("WebP Compressed Image")
+                                                }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                    .padding(.bottom, 10)
+                                                Toggle(isOn: $boldfont) {
+                                                    Text("Use Bold Font")
                                                 }.toggleStyle(SwitchToggleStyle(tint: .blue))
                                                     .padding(.bottom, 10)
                                             }
@@ -606,7 +616,8 @@ struct ContentView: View {
                                               rows: rows,
                                               columns: columns,
                                               fontsize: fontsize,
-                                              compress: compress
+                                              webp: webp,
+                                              boldfont: boldfont
                         )
                         isShowingImage = imageLoader.errorMessage == nil
                     }
