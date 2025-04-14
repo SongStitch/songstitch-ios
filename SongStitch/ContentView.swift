@@ -428,11 +428,11 @@ struct ContentView: View {
                                         
                                         var stepperRange: ClosedRange<Int> {
                                             if method == "album" {
-                                                return 1...15
+                                                return 1...20
                                             } else if method == "track" {
-                                                return 1...5
-                                            } else {
                                                 return 1...10
+                                            } else {
+                                                return 1...20
                                             }
                                         }
                                         VStack {
