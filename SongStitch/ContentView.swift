@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import Combine
 
+
 /* Fullscreen image view logic */
 struct FullscreenImageView: View {
     
@@ -362,6 +363,7 @@ struct ContentView: View {
                                             }
                                         }
                                     }
+                                    
                                     Text("Last.fm Username")
                                         .font(.headline)
                                         .padding(.top, 20)
@@ -374,18 +376,16 @@ struct ContentView: View {
                                             ToolbarItemGroup(placement: .keyboard) {
                                                 Button("Generate") {
                                                     triggerGenerateButton()
-                                                }.foregroundColor(Color.blue)
-                                                
+                                                }
+                                                .buttonStyle(.glassProminent)
                                                 Spacer()
-                                                
-                                                    .foregroundColor(Color.blue)
                                                 Button("Done") {
                                                     isInputActive = false
                                                 }
-                                                .foregroundColor(Color.blue)
+                                                .buttonStyle(.glassProminent)
                                             }
                                         }
-                                    
+                                        
                                     Group {
                                         
                                         Text("Collage Options")
@@ -439,6 +439,7 @@ struct ContentView: View {
                                             Stepper(value: $rows, in: stepperRange) {
                                                 Text("Rows: \(rows)")
                                             }
+                                            .padding(.bottom, 10)
                                             Stepper(value: $columns, in: stepperRange) {
                                                 Text("Columns: \(columns)")
                                             }
@@ -542,38 +543,35 @@ struct ContentView: View {
                                     .padding(.bottom, 10)
                                     .font(.system(size: 14, weight: .thin))
                             }
-                            HStack {
-                                Button(action: {
+                            HStack(spacing: 12) {
+                                Button {
                                     isShowingShareSheet = true
-                                }) {
+                                } label: {
                                     Label("Share", systemImage: "square.and.arrow.up")
-                                        .padding()
-                                        .foregroundColor(.blue)
-                                        .background(
-                                            Capsule()
-                                                .stroke(Color.blue, lineWidth: 1)                                        )
+                                        .frame(minWidth: 100)
                                 }
+                                .buttonStyle(.glass)
+                                .tint(.blue)
+                                .controlSize(.large)
                                 .sheet(isPresented: $isShowingShareSheet) {
                                     ShareSheet(activityItems: [image])
                                 }
                                 
-                                Button(action: {
+                                Button {
                                     withAnimation(.easeInOut(duration: 0.5)) {
                                         imageLoader.image = nil
                                     }
                                     withAnimation(.easeInOut(duration: 0.5)) {
                                         isShowingImage = false
                                     }
-                                }) {
+                                } label: {
                                     Label("Close", systemImage: "xmark")
-                                        .padding()
-                                        .foregroundColor(.red)
-                                        .background(
-                                            Capsule()
-                                                .stroke(Color.red, lineWidth: 1)                                        )
-                                }.padding(.leading, 10)
+                                        .frame(minWidth: 100)
+                                }
+                                .buttonStyle(.glass)
+                                .tint(.red)
+                                .controlSize(.large)
                             }
-                            
                         }     .opacity(buttonOpacity)
                             .onAppear {
                                 withAnimation(.easeInOut(duration: 0.5)) {
@@ -589,69 +587,54 @@ struct ContentView: View {
                     }
                     Spacer()
                     
-                    if imageLoader.isLoading {
-                        ZStack {
-                            Color.clear
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            VStack {
-                                Spacer()
-                                `ProgressView`()
-                                    .progressViewStyle(CircularProgressViewStyle())
-                                    .scaleEffect(2.0)
-                                Spacer()
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    
-                    
-                    Button(action: {
-                        imageLoader.loadImage(username: username,
-                                              method: method,
-                                              period: period,
-                                              track: track,
-                                              artist: artist,
-                                              album: album,
-                                              playcount: playcount,
-                                              rows: rows,
-                                              columns: columns,
-                                              fontsize: fontsize,
-                                              webp: webp,
-                                              boldfont: boldfont
+                    Button {
+                        imageLoader.loadImage(
+                            username: username,
+                            method: method,
+                            period: period,
+                            track: track,
+                            artist: artist,
+                            album: album,
+                            playcount: playcount,
+                            rows: rows,
+                            columns: columns,
+                            fontsize: fontsize,
+                            webp: webp,
+                            boldfont: boldfont
                         )
                         isShowingImage = imageLoader.errorMessage == nil
                     }
-                    ) {
-                        Text(imageLoader.isLoading ? "Generating..." : "Generate")
-                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 50)
-                            .edgesIgnoringSafeArea(.bottom)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .background(
-                                ZStack {
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color.blue, Color.purple]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                    .cornerRadius(15)
-                                    .opacity(0.8)
-                                    
-                                    if imageLoader.isLoading {
-                                        Color.gray
-                                    }
-                                }
-                            )
-                            .background(imageLoader.isLoading ? Color.gray : Color.blue)
-                            .cornerRadius(15)
-                            .padding(.horizontal)
-                            .padding(.top, 10)
-                            .padding(.bottom, 10)
-                            .zIndex(-1)
-                            .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
+                    label: {
+                        HStack(spacing: 10) {
+                            if imageLoader.isLoading { ProgressView() }
+                            Text(imageLoader.isLoading ? "Generating..." : "Generate")
+                                .font(.title3.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: 20, alignment: .center)
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 16)
+                        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.large)
+                    .tint(.blue)
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(
+                                LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.15)],
+                                               startPoint: .topLeading,
+                                               endPoint: .bottomTrailing),
+                                lineWidth: 1
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 18, x: 0, y: 10)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 10)
+                    .opacity(imageLoader.isLoading || generateStatus ? 0.5 : 1)
                     .disabled(generateStatus || imageLoader.isLoading || isShowingImage || username == "")
-                    .opacity((username == "") ? 0.5 : 1)
+                    .opacity((username == "") ? 0 : 1)
                     .opacity((generateStatus || imageLoader.isLoading || isShowingImage || !IsShowingGenerate) ? 0 : 1)
                     .alert(item: $imageLoader.error) { error in
                         Alert(
@@ -660,7 +643,58 @@ struct ContentView: View {
                             dismissButton: .default(Text("OK"))
                         )
                     }
+                    
                 }
+                
+                if imageLoader.isLoading {
+                    ZStack {
+                        // Dimmed, blurred backdrop
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
+                            .ignoresSafeArea()
+                            .overlay(Color.black.opacity(0.15))
+                            .transition(.opacity)
+
+                        // Glass card content
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .scaleEffect(1.6)
+
+                            Text("Generating your collage…")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .opacity(0.9)
+
+                            Text("This may take a few seconds")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 24)
+                        .padding(.horizontal, 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .stroke(
+                                            LinearGradient(colors: [Color.white.opacity(0.6), Color.white.opacity(0.15)],
+                                                           startPoint: .topLeading,
+                                                           endPoint: .bottomTrailing),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .shadow(color: Color.black.opacity(0.25), radius: 24, x: 0, y: 12)
+                        )
+                        .padding(40)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .zIndex(1)
+                    .transition(.opacity.combined(with: .scale))
+                    .animation(.easeInOut(duration: 0.25), value: imageLoader.isLoading)
+                }
+                
+                
             }
         }
         .onDisappear {
@@ -698,7 +732,7 @@ struct ContentView: View {
         }
         .padding(.top, 0)
         .padding(.bottom, 0)
-        .edgesIgnoringSafeArea(.bottom)
+        //.edgesIgnoringSafeArea(.bottom)
     }
 }
 
@@ -706,3 +740,4 @@ struct IdentifiableError: Identifiable {
     let id = UUID()
     let error: Error
 }
+
