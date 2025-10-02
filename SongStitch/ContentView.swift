@@ -406,21 +406,25 @@ struct ContentView: View {
                                             }
                                             .pickerStyle(MenuPickerStyle())
                                             .accentColor(.blue)
+                                            .padding(.bottom, 10)
                                         }
                                         
                                         if method != "artist" {
                                             Toggle(isOn: $album) {
                                                 Text("Album Name")
                                             }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                .padding(.bottom, 10)
                                         }
                                         if method == "track" {
                                             Toggle(isOn: $track) {
                                                 Text("Track Name")
                                             }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                                .padding(.bottom, 10)
                                         }
                                         Toggle(isOn: $artist) {
                                             Text("Artist Name")
                                         }.toggleStyle(SwitchToggleStyle(tint: .blue))
+                                            .padding(.bottom, 10)
                                         Toggle(isOn: $playcount) {
                                             Text("Play Count")
                                         }.toggleStyle(SwitchToggleStyle(tint: .blue))
@@ -438,13 +442,16 @@ struct ContentView: View {
                                         VStack {
                                             Stepper(value: $rows, in: stepperRange) {
                                                 Text("Rows: \(rows)")
+                                                    .padding(.bottom, 10)
                                             }
+                                            .padding(.top, 10)
                                             .padding(.bottom, 10)
                                             Stepper(value: $columns, in: stepperRange) {
                                                 Text("Columns: \(columns)")
                                             }
                                         }
                                         .padding(.top, 10)
+                                        .padding(.bottom, 10)
                                         
                                         VStack {
                                             Toggle(isOn: $showMoreToggles) {
@@ -618,16 +625,7 @@ struct ContentView: View {
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
                     .tint(.blue)
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .stroke(
-                                LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.15)],
-                                               startPoint: .topLeading,
-                                               endPoint: .bottomTrailing),
-                                lineWidth: 1
-                            )
-                    )
+                    .glassEffect(.regular.interactive())
                     .shadow(color: Color.black.opacity(0.15), radius: 18, x: 0, y: 10)
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
